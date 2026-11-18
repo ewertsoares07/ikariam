@@ -1,0 +1,25 @@
+{
+  "name": "Comando Imperial · Ikariam",
+  "short_name": "Imperial",
+  "description": "App de apoio para Ikariam: vinho, alarmes de guerra, viagem, saque, alvos e operações da aliança.",
+  "lang": "pt-BR",
+  "start_url": "./index.html#/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08131d",
+  "theme_color": "#0d2333",
+  "categories": ["games", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Vinho do império", "short_name": "Vinho", "url": "./index.html#/imperio", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Cronômetros", "short_name": "Alarmes", "url": "./index.html#/cronometros", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Calcular viagem", "short_name": "Viagem", "url": "./index.html#/militar/viagem", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Colar relatório", "short_name": "Relatório", "url": "./index.html#/alvos/novo", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -1,0 +1,76 @@
+rules_version = '2';
+// =====================================================================
+// REGRAS DO COMANDO IMPERIAL 2.0
+// - Cada jogador só lê e grava o PRÓPRIO império (saves/{uid}).
+// - Quem entra com Google nasce como "pendente"; só o líder aprova.
+// - Membros veem operações, alvos e mural; oficiais criam operações e avisos.
+// Troque o e-mail abaixo se o dono mudar (igual ao js/config.js).
+// =====================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null; }
+    function ehDono() {
+      return logado() && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'ewert.soares07@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function perfil() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
+    function temPerfil() { return logado() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)); }
+    function papel() { return temPerfil() ? perfil().papel : 'nenhum'; }
+    function admin() { return ehDono() || papel() == 'admin'; }
+    function oficial() { return admin() || papel() == 'oficial'; }
+    function membro() { return oficial() || papel() == 'membro'; }
+
+    // Perfis
+    match /usuarios/{uid} {
+      allow read: if logado() && (request.auth.uid == uid || membro());
+      // ao entrar pela 1ª vez: só pode se criar como pendente (o dono nasce líder)
+      allow create: if logado() && request.auth.uid == uid
+        && request.resource.data.papel == (ehDono() ? 'admin' : 'pendente');
+      // o próprio usuário atualiza nome/foto, mas não muda o cargo; o líder muda tudo
+      allow update: if admin()
+        || (logado() && request.auth.uid == uid && request.resource.data.papel == resource.data.papel);
+      allow delete: if admin();
+    }
+
+    // Império pessoal (cada um o seu)
+    match /saves/{uid} {
+      allow read, write: if logado() && request.auth.uid == uid;
+    }
+
+    // Operações da aliança
+    match /ops/{opId} {
+      allow read: if membro();
+      allow create, update, delete: if oficial();
+      match /participantes/{uid} {
+        allow read: if membro();
+        allow write: if membro() && request.auth.uid == uid;
+        allow delete: if oficial();
+      }
+    }
+
+    // Alvos compartilhados
+    match /alvosAlianca/{id} {
+      allow read, create: if membro();
+      allow update, delete: if oficial() || (membro() && resource.data.autorUid == request.auth.uid);
+    }
+
+    // Mural de avisos
+    match /mural/{id} {
+      allow read: if membro();
+      allow write: if oficial();
+    }
+
+    // Save antigo da v1: só o dono lê (para migrar), ninguém mais grava
+    match /imperial_saves/{doc} {
+      allow read: if ehDono();
+      allow write: if false;
+    }
+
+    // Todo o resto fechado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

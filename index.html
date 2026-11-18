@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Comando Imperial · Ikariam</title>
+  <meta name="description" content="App de apoio para Ikariam: vinho, alarmes de guerra, viagem, saque, alvos e operações da aliança. Funciona offline.">
+  <meta name="theme-color" content="#0d2333">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Imperial">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/menu.css">
+</head>
+<body>
+  <header class="topo">
+    <img class="marca" src="icons/icon.svg" alt="">
+    <div class="titulo">
+      <h1>Comando <b>Imperial</b></h1>
+      <div class="sub" id="topoSub">Ikariam · apoio de campo</div>
+    </div>
+    <button class="topo-btn" id="btnTimers" aria-label="Cronômetros">⏱️<span class="ponto oculto" id="pontoTimers"></span></button>
+    <button class="topo-btn" id="btnConta" aria-label="Conta e nuvem">☁️</button>
+  </header>
+  <div id="banner"></div>
+
+  <main id="tela"><div class="vazio"><span class="grande">🏛️</span>Carregando o império…</div></main>
+
+  <nav class="nav-baixo" aria-label="Navegação principal">
+    <button class="nav-item" data-rota="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg>Início</button>
+    <button class="nav-item" data-rota="imperio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 21V9l8-5 8 5v12"/><path d="M8 21v-7M12 21v-7M16 21v-7"/><path d="M7 11h10"/></svg>Império<span class="ponto oculto" id="pontoImperio"></span></button>
+    <button type="button" class="mn-botao" id="mnBotao" aria-label="Menu"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></span>Menu</button>
+    <button class="nav-item" data-rota="militar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M9.5 6.5 12 4h3v3l-2.5 2.5"/></svg>Militar</button>
+    <button class="nav-item" data-rota="alvos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Alvos</button>
+  </nav>
+
+  <script type="module" src="js/app.js"></script>
+  <noscript>Este app precisa de JavaScript ligado.</noscript>
+</body>
+</html>
