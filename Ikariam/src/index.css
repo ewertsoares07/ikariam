@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-canvas: #f3ecdc;
+    --bg-surface: #fffdf8;
+    --bg-surface-alt: #f7f0e0;
+    --bg-header: #163a52;
+    --border-subtle: #dcc8a6;
+    --border-strong: #b48a54;
+    --text-primary: #24190e;
+    --text-secondary: #5c4835;
+    --text-muted: #7d6b56;
+    --accent-aegean: #1b4b6b;
+    --accent-gold: #c99326;
+    --accent-terracotta: #8a2a1f;
+    --accent-olive: #267c42;
+  }
+
+  .dark {
+    --bg-canvas: #0d1117;
+    --bg-surface: #161b22;
+    --bg-surface-alt: #1c222b;
+    --bg-header: #111822;
+    --border-subtle: #2d3440;
+    --border-strong: #947144;
+    --text-primary: #f0f6fc;
+    --text-secondary: #c9d1d9;
+    --text-muted: #8b949e;
+    --accent-aegean: #3b82b6;
+    --accent-gold: #e3b341;
+    --accent-terracotta: #dc5b4a;
+    --accent-olive: #34d399;
+  }
+
+  html {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+.font-display {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-mono-num {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Greek Key subtle top accent strip */
+.hellenic-meander-line {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--accent-gold) 0px,
+    var(--accent-gold) 10px,
+    transparent 10px,
+    transparent 14px,
+    var(--accent-aegean) 14px,
+    var(--accent-aegean) 24px,
+    transparent 24px,
+    transparent 28px
+  );
+  opacity: 0.8;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(142, 104, 63, 0.35);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(227, 179, 65, 0.28);
+}
+
+/* Safe area helper for installed PWA mobile bottom nav */
+.pb-safe-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+}
+
+@media (min-width: 860px) {
+  .pb-safe-nav {
+    padding-bottom: 2rem;
+  }
+}
+
+/* Hide scrollbars cleanly for touch horizontal tab strip */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tabSlideFromRight {
+  from {
+    opacity: 0;
+    transform: translate3d(22px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes tabSlideFromLeft {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: tabFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-tab-from-right {
+  animation: tabSlideFromRight 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-tab-from-left {
+  animation: tabSlideFromLeft 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-tab-from-right,
+  .animate-tab-from-left {
+    animation: none;
+  }
+}
+

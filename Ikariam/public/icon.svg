@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="aegeanGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d2333"/>
+      <stop offset="55%" stop-color="#1b4b6b"/>
+      <stop offset="100%" stop-color="#0a1926"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2cc60"/>
+      <stop offset="50%" stop-color="#c99326"/>
+      <stop offset="100%" stop-color="#8e683f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#aegeanGrad)"/>
+  <circle cx="256" cy="256" r="208" fill="none" stroke="url(#goldGrad)" stroke-width="10" opacity="0.45"/>
+  <!-- Hellenic Shield -->
+  <path d="M256 82 L396 138 V256 C396 346 334 406 256 436 C178 406 116 346 116 256 V138 Z" fill="#132d42" stroke="url(#goldGrad)" stroke-width="16" stroke-linejoin="round"/>
+  <!-- Classical Ionic Pillar Inside Shield -->
+  <rect x="206" y="168" width="100" height="22" rx="6" fill="url(#goldGrad)"/>
+  <circle cx="204" cy="180" r="14" fill="url(#goldGrad)"/>
+  <circle cx="308" cy="180" r="14" fill="url(#goldGrad)"/>
+  <rect x="224" y="194" width="16" height="142" rx="4" fill="#f7f1e3"/>
+  <rect x="248" y="194" width="16" height="142" rx="4" fill="#f7f1e3"/>
+  <rect x="272" y="194" width="16" height="142" rx="4" fill="#f7f1e3"/>
+  <rect x="196" y="340" width="120" height="24" rx="6" fill="url(#goldGrad)"/>
+</svg>

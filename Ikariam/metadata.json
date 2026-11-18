@@ -1,0 +1,6 @@
+{
+  "name": "Ikariam - Painel Imperial Autônomo",
+  "description": "Painel imperial completo para Ikariam com calculadoras militares, controle de armazéns, espionagem, cronômetros com áudio e gerenciamento de frotas 100% autônomo e offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
