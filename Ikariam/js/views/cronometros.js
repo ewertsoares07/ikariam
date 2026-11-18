@@ -2,7 +2,7 @@
 import * as store from '../store.js';
 import * as T from '../timers.js';
 import { PRESETS_GUERRA, PIRATARIA, MILAGRES } from '../data.js';
-import { esc, fmtDur, campoNum } from '../ui.js';
+import { esc, fmtDur, pedirNumero } from '../ui.js';
 import { timerHtml, ligarTimers, novoTimerFolha } from './comum.js';
 
 const ABAS = [['', '⏱️ Alarmes'], ['pirataria', '🏴‍☠️ Pirataria'], ['milagres', '🗿 Milagres']];
@@ -64,13 +64,19 @@ function milagres(raiz, ctx) {
   raiz.innerHTML = `<div class="card"><h3><span class="ic-q">🗿</span>Recarga dos milagres</h3>
     <p class="dica">A recarga muda com o nível do templo: ajuste as horas uma vez e depois é só tocar em "Usei".</p>
     ${MILAGRES.map(m => `<div class="item"><span class="ic">${m.icone}</span><span class="meio"><b>${esc(m.nome)}</b><small>${esc(m.efeito)}</small></span>
-      <span class="flex" style="gap:6px">${campoNum('h_' + m.id, conf[m.id] ?? m.recargaH, 'class="entrada" style="width:64px;padding:7px" min="1" aria-label="Horas de recarga"')}<span class="pequeno mut">h</span>
+      <span class="flex" style="gap:6px"><button class="chip" data-h="${m.id}" aria-label="Horas de recarga">⏳ ${conf[m.id] ?? m.recargaH}h ✎</button>
       <button class="btn mini ouro" data-m="${m.id}">Usei</button></span></div>`).join('')}</div>`;
-  raiz.addEventListener('change', e => { const n = e.target.name; if (n?.startsWith('h_')) store.set(s => { s.config.milagres[n.slice(2)] = +e.target.value || null; }); });
-  raiz.addEventListener('click', e => {
+  raiz.addEventListener('click', async e => {
+    const hb = e.target.closest('[data-h]');
+    if (hb) {
+      const m = MILAGRES.find(x => x.id === hb.dataset.h);
+      const n = await pedirNumero({ titulo: `${m.icone} ${m.nome}`, sub: 'Recarga do milagre', rotulo: 'Horas até poder usar de novo', valor: conf[m.id] ?? m.recargaH, min: 1, max: 240, passos: [-6, -1, 1, 6], sufixo: 'h', atalhos: [{ rotulo: 'Padrão', valor: m.recargaH, texto: `${m.recargaH}h` }] });
+      if (n != null) store.set(s => { s.config.milagres[m.id] = n; });
+      return;
+    }
     const b = e.target.closest('[data-m]'); if (!b) return;
     const m = MILAGRES.find(x => x.id === b.dataset.m);
-    const h = +raiz.querySelector(`[name=h_${m.id}]`).value || m.recargaH;
+    const h = conf[m.id] || m.recargaH;
     T.novoTimer({ nome: `${m.nome} pronto de novo`, icone: m.icone, seg: h * 3600, tipo: 'milagre' });
   });
 }

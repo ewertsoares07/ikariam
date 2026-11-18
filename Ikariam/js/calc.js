@@ -1,7 +1,7 @@
 // =====================================================================
 // CÁLCULOS PUROS (sem tela) — fáceis de testar e corrigir
 // =====================================================================
-import { UNIDADES, POSEIDON_BONUS, TRITAO_BONUS, OLIGARQUIA_MULT, VEL_MERCANTE } from './data.js';
+import { UNIDADES, POSEIDON_BONUS, TRITAO_BONUS, OLIGARQUIA_MULT, VEL_MERCANTE, HUMOR } from './data.js';
 
 export const unidadePorId = id => UNIDADES.find(u => u.id === id);
 
@@ -67,6 +67,48 @@ export function nivelVinho(segRest) {
 export function reposicaoVinho(consumo, dias, restante, cap) {
   const precisa = Math.max(0, Math.ceil(consumo * 24 * dias - (restante || 0)));
   return { precisa, barcos: Math.ceil(precisa / Math.max(1, cap)) };
+}
+
+// ---------- Habitantes / Satisfação ----------
+// Crescimento/h = satisfação × 0,02 e cada habitante novo tira 1 de satisfação:
+// S(t) = S0·e^(−t/50) e P(t) = P0 + S0·(1 − e^(−t/50)), até o limite da Prefeitura.
+export function humor(sat) {
+  if (sat == null || !Number.isFinite(+sat)) return null;
+  return HUMOR.find(h => sat >= h.min);
+}
+
+export function habitantesAgora(h, agora = Date.now()) {
+  if (!h || h.atual == null) return null;
+  const max = h.max > 0 ? h.max : null;
+  const s0 = h.satisfacao == null ? null : +h.satisfacao;
+  const p0 = +h.atual;
+  const t = Math.max(0, (agora - (h.em || agora)) / 3.6e6);
+  let atual = p0, sat = s0;
+  if (s0 != null && s0 !== 0) {
+    atual = p0 + s0 * (1 - Math.exp(-t / 50));
+    if (max != null && s0 > 0 && atual > max) atual = Math.max(p0, max);
+    atual = Math.max(0, atual);
+    sat = s0 - (atual - p0);
+  }
+  const cresceH = sat == null ? null : sat * 0.02;
+  const equilibrio = s0 == null ? null : Math.max(0, p0 + s0);
+  let estado = 'sem', cheiaEm = null;
+  if (max != null && atual >= max - 0.5) estado = 'cheia';
+  else if (sat == null) estado = 'sem';
+  else if (sat < -0.5) estado = 'caindo';
+  else if (sat <= 0.5) estado = 'parada';
+  else if (max != null && equilibrio <= max) estado = 'trava';
+  else estado = 'crescendo';
+  if (estado === 'crescendo') {
+    const falta = max - atual;
+    const horas = -50 * Math.log(1 - falta / sat);
+    if (Number.isFinite(horas)) cheiaEm = agora + horas * 3.6e6;
+  }
+  return {
+    atual: Math.floor(atual), max, sat: sat == null ? null : Math.round(sat), cresceH, equilibrio: equilibrio == null ? null : Math.floor(equilibrio),
+    ocupacao: max ? Math.min(1, atual / max) : null, livres: max ? Math.max(0, Math.floor(max - atual)) : null,
+    estado, cheiaEm, humor: humor(sat),
+  };
 }
 
 // ---------- Corrupção ----------

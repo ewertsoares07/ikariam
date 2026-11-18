@@ -3,7 +3,7 @@ import * as store from '../store.js';
 import * as T from '../timers.js';
 import { PAPEIS_USUARIO } from '../config.js';
 import { VERSAO_APP } from '../data.js';
-import { esc, fmtDesde, toast, confirmar, campoNum } from '../ui.js';
+import { esc, fmt, fmtDesde, toast, confirmar, pedirNumero, pedirTexto } from '../ui.js';
 
 const ABAS = [['conta', '☁️ Conta'], ['config', '🎛️ Ajustes'], ['sobre', 'ℹ️ Sobre']];
 
@@ -64,25 +64,33 @@ function conta(raiz, ctx) {
   });
 }
 
+const CFG = {
+  nomeJogador: { titulo: '👤 Nome no jogo', texto: true, ph: 'Seu nome no Ikariam' },
+  servidor: { titulo: '🌍 Servidor', texto: true, ph: 'ex.: Alpha BR' },
+  capMercante: { titulo: '🚢 Carga do mercante', min: 100, suf: 'carga', atalhos: [500, 750, 1000, 1250, 1500].map(v => ({ rotulo: v === 500 ? 'Base' : 'Porão', valor: v })), dica: 'Base do jogo: 500. Com melhorias de porão, ponha o seu valor.' },
+  capCargueiro: { titulo: '🛳️ Carga do cargueiro', min: 1000, suf: 'carga' },
+  mercantes: { titulo: '🚢 Quantos mercantes', passos: [-10, -1, 1, 10] },
+  cargueiros: { titulo: '🛳️ Quantos cargueiros', passos: [-1, 1] },
+  avisoMin: { titulo: '🔔 Aviso antes do fim', rotulo: 'Minutos antes (0 = desligado)', max: 120, suf: 'min', atalhos: [0, 5, 10, 15].map(v => ({ rotulo: v ? 'Avisar' : 'Desligar', valor: v, texto: v ? `${v} min` : 'Off' })) },
+};
+const dadoCfg = (id, rot, val) => `<button class="dado ${val == null ? 'falta' : ''}" data-cfg="${id}"><span>${rot}</span><b>${val ?? 'tocar p/ pôr'}</b></button>`;
+
 function config(raiz, ctx) {
   const c = ctx.s.config;
   const sw = (name, on, txt, sub = '') => `<label class="marcar"><span class="cresce">${txt}${sub ? `<small class="mut" style="display:block;font-weight:600">${sub}</small>` : ''}</span><span class="interruptor"><input type="checkbox" name="${name}" ${on ? 'checked' : ''}><i></i></span></label>`;
   raiz.innerHTML = `
   <div class="card"><h3><span class="ic-q">👤</span>Jogador</h3>
-    <div class="grade2"><label class="campo"><span>Nome no jogo</span><input name="nomeJogador" value="${esc(c.nomeJogador)}" maxlength="30"></label>
-    <label class="campo"><span>Servidor</span><input name="servidor" value="${esc(c.servidor)}" maxlength="30" placeholder="ex.: Alpha BR"></label></div>
+    <div class="dados d2">${dadoCfg('nomeJogador', 'Nome no jogo', c.nomeJogador ? esc(c.nomeJogador) : null)}${dadoCfg('servidor', 'Servidor', c.servidor ? esc(c.servidor) : null)}</div>
     <div style="margin-top:8px">${sw('oligarquia', c.oligarquia, 'Governo Oligarquia', 'Já marca +10% de velocidade nas viagens')}</div>
   </div>
   <div class="card"><h3><span class="ic-q">⛵</span>Frota de transporte</h3>
-    <div class="grade2">
-      <label class="campo"><span>Carga do mercante</span>${campoNum('capMercante', c.capMercante, 'min="100"')}</label>
-      <label class="campo"><span>Carga do cargueiro</span>${campoNum('capCargueiro', c.capCargueiro, 'min="1000"')}</label>
-      <label class="campo"><span>Quantos mercantes</span>${campoNum('mercantes', c.mercantes || '', 'min="0"')}</label>
-      <label class="campo"><span>Quantos cargueiros</span>${campoNum('cargueiros', c.cargueiros || '', 'min="0"')}</label>
+    <div class="dados d2">
+      ${dadoCfg('capMercante', 'Carga do mercante', fmt(c.capMercante))}${dadoCfg('capCargueiro', 'Carga do cargueiro', fmt(c.capCargueiro))}
+      ${dadoCfg('mercantes', 'Quantos mercantes', fmt(c.mercantes || 0))}${dadoCfg('cargueiros', 'Quantos cargueiros', fmt(c.cargueiros || 0))}
     </div><p class="pequeno mut" style="margin:8px 2px 0">Base do jogo: 500 por mercante. Com melhorias de porão, ponha o seu valor.</p></div>
   <div class="card"><h3><span class="ic-q">🔔</span>Alarmes</h3>
     <div class="lista" style="gap:8px">${sw('som', c.som, 'Som de corneta')}${sw('voz', c.voz, 'Voz em português')}${sw('vibrar', c.vibrar, 'Vibrar')}</div>
-    <label class="campo" style="margin-top:10px"><span>Aviso antes do fim (min, 0 = desligado)</span>${campoNum('avisoMin', c.avisoMin, 'min="0" max="120"')}</label>
+    <div class="dados d2" style="margin-top:10px">${dadoCfg('avisoMin', 'Aviso antes do fim', c.avisoMin ? `${c.avisoMin} min` : 'desligado')}</div>
     <button class="btn bloco" style="margin-top:10px" data-testar>🎺 Testar alarme</button>
   </div>
   <div class="card"><h3><span class="ic-q">🎨</span>Aparência</h3>
@@ -99,6 +107,16 @@ function config(raiz, ctx) {
     store.set(s => { s.config[t.name] = val; });
   });
   raiz.addEventListener('click', async e => {
+    const cf = e.target.closest('[data-cfg]')?.dataset.cfg;
+    if (cf) {
+      const def = CFG[cf];
+      const v = def.texto
+        ? await pedirTexto({ titulo: def.titulo, valor: c[cf] || '', placeholder: def.ph || '', max: 30 })
+        : await pedirNumero({ titulo: def.titulo, rotulo: def.rotulo || '', valor: c[cf] || '', min: def.min ?? 0, max: def.max ?? null, passos: def.passos || [], atalhos: def.atalhos || [], sufixo: def.suf || '', dica: def.dica || '' });
+      if (v == null) return;
+      store.set(st => { st.config[cf] = v; });
+      return toast('Ajuste salvo ✔', 'ok');
+    }
     if (e.target.closest('[data-zerar]') && await confirmar('Apagar tudo?', 'Cidades, alvos e cronômetros deste aparelho e da nuvem. Não dá para desfazer.', 'Apagar tudo', true)) {
       const cfg = store.get().config;
       store.substituir({ ...store.estadoVazio(), config: cfg }, 'local');

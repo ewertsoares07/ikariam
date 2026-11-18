@@ -4,8 +4,8 @@ import * as T from '../timers.js';
 import { UNIDADES, LINHAS, LC_PRESETS, POSEIDON_BONUS, VEL_MERCANTE } from '../data.js';
 import { resumoExercito, somarExercitos, distancia, tempoViagem, velocidadeGrupo, barcosParaPeso, analisarComposicao, flancoNaval, horaPartida, unidadePorId, generaisUnidade } from '../calc.js';
 import { lerUnidades } from '../parser.js';
-import { esc, fmt, fmtDur, fmtHora, fmtQuando, toast, copiar, confirmar, campoNum, campoCoords, paraDatetimeLocal } from '../ui.js';
-import { gradeUnidades, lerGradeUnidades, colarFolha, alertasHtml, seletorCidade } from './comum.js';
+import { esc, fmt, fmtDur, fmtHora, fmtQuando, toast, copiar, confirmar, campoNum, campoCoords, paraDatetimeLocal, folha, pedirNumero } from '../ui.js';
+import { gradeUnidades, gradeUnidadesInfo, lerGradeUnidades, colarFolha, alertasHtml, seletorCidade } from './comum.js';
 
 const ABAS = [['exercito', '🛡️ Exército'], ['viagem', '🧭 Viagem'], ['waving', '🌊 Waving'], ['prebatalha', '⚖️ Pré-batalha'], ['flancos', '⛵ Flancos']];
 let cidadeSel = null;
@@ -44,16 +44,16 @@ function exercito(raiz, ctx) {
   <div class="linha-chips" style="margin-bottom:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">${s.cidades.map(x => { const n = Object.values(x.militar?.unidades || {}).reduce((a, b) => a + b, 0); return `<button class="chip ${x.id === cidadeSel ? 'ativo' : ''}" data-cid="${x.id}">${x.capital ? '👑 ' : ''}${esc(x.nome)}${n ? ` · ${fmt(n)}` : ''}${x.militar?.fora ? ' ✈️' : ''}</button>`; }).join('')}</div>
   <div class="card">
     <div class="card-topo"><span class="ic-q">🏛️</span><h3>${esc(c.nome)}</h3><div class="dir"><button class="btn mini" data-colar>📋 Colar do jogo</button></div></div>
-    <label class="marcar" style="margin-bottom:10px"><input type="checkbox" data-fora ${c.militar.fora ? 'checked' : ''}><span class="cresce">Tropas fora de casa<small class="mut" style="display:block;font-weight:600">Atacando, ocupando ou estacionadas longe: manutenção 2×</small></span></label>
+    <button class="dado ${c.militar.fora ? 'desliga' : 'liga'}" data-fora style="margin-bottom:10px"><span>Onde estão as tropas <i class="info-i" data-balao="Atacando, ocupando ou estacionadas longe de casa, a manutenção dobra (2×).">i</i></span><b>${c.militar.fora ? '✈️ Fora de casa · 2×' : '🏠 Em casa · 1×'}</b><small>toque para trocar</small></button>
     <div class="grade3" style="margin-bottom:10px">
       <div class="kpi"><span>Generais</span><b>${fmt(rc.generais, 1)}</b></div>
       <div class="kpi ${c.militar.fora ? 'amarelo' : ''}"><span>Ouro / h</span><b>${fmt(rc.manutReal)}</b></div>
       <div class="kpi"><span>Barcos p/ levar</span><b>${fmt(barcosParaPeso(rc.peso, cap))}</b></div>
     </div>
-    <div class="sec-t">🗡️ Terra</div>${gradeUnidades(c.militar.unidades, 'terra')}
-    <div class="sec-t">⚓ Mar</div>${gradeUnidades(c.militar.unidades, 'mar')}
-    <div class="grade2" style="margin-top:12px"><button class="btn mini" data-copiar>📤 Copiar resumo</button><button class="btn mini" data-zerar>🧹 Zerar cidade</button></div>
-    <p class="pequeno mut" style="margin:8px 2px 0">Os números salvam sozinhos ao sair do campo. Peso de transporte: Wiki (navio = ${fmt(cap)}).</p>
+    <div class="sec-t">🗡️ Terra</div>${gradeUnidadesInfo(c.militar.unidades, 'terra')}
+    <div class="sec-t">⚓ Mar</div>${gradeUnidadesInfo(c.militar.unidades, 'mar')}
+    <div class="grade3" style="margin-top:12px"><button class="btn mini" data-tudo>✏️ Editar tudo</button><button class="btn mini" data-copiar>📤 Copiar</button><button class="btn mini" data-zerar>🧹 Zerar</button></div>
+    <p class="pequeno mut" style="margin:8px 2px 0">Toque numa unidade para mudar a quantidade. Peso de transporte: Wiki (navio = ${fmt(cap)}).</p>
   </div>`}`;
 
   raiz.addEventListener('click', async e => {
@@ -76,13 +76,25 @@ function exercito(raiz, ctx) {
       const linhas = Object.entries(c.militar.unidades).filter(([, q]) => q > 0).map(([id, q]) => `${unidadePorId(id)?.nome}: ${fmt(q)}`);
       return copiar(`🏛️ ${c.nome} [${c.coords}]\n${linhas.join('\n')}\nGenerais: ${fmt(rc.generais, 1)} · Ouro/h: ${fmt(rc.manutReal)}`);
     }
+    if (t.closest('[data-fora]')) { const fora = !c.militar.fora; store.set(st => { st.cidades.find(x => x.id === c.id).militar.fora = fora; }); return toast(fora ? '✈️ Tropas fora: manutenção 2×' : '🏠 Tropas em casa', 'ok'); }
+    const ue = t.closest('[data-uni-ed]');
+    if (ue) {
+      const u = unidadePorId(ue.dataset.uniEd);
+      const atual = c.militar.unidades[u.id] || 0;
+      const n = await pedirNumero({ titulo: `${u.icone} ${u.nome}`, sub: `${c.nome} · ${u.manut} ouro/h cada`, rotulo: 'Quantidade', valor: atual || '', min: 0, passos: [-100, -10, 10, 100], limpar: true });
+      if (n === undefined) return;
+      store.set(st => { const m = st.cidades.find(x => x.id === c.id).militar; if (n > 0) m.unidades[u.id] = n; else delete m.unidades[u.id]; });
+      return toast(`${u.icone} ${u.nome}: ${fmt(n || 0)}`, 'ok');
+    }
+    if (t.closest('[data-tudo]')) {
+      const f = folha({ classe: 'mn-alta', titulo: `Tropas de ${c.nome}`, sub: 'Preencha várias de uma vez',
+        html: `<div class="sec-t">🗡️ Terra</div>${gradeUnidades(c.militar.unidades, 'terra')}<div class="sec-t">⚓ Mar</div>${gradeUnidades(c.militar.unidades, 'mar')}
+        <div class="fl-botoes"><button class="btn" data-fechar>Cancelar</button><button class="btn ouro" data-ok>Salvar</button></div>` });
+      f.corpo.querySelector('[data-ok]').onclick = () => { const u = lerGradeUnidades(f.corpo); store.set(st => { st.cidades.find(x => x.id === c.id).militar.unidades = u; }); f.fechar(); toast('🛡️ Exército salvo', 'ok'); };
+      return;
+    }
     if (t.closest('[data-zerar]') && await confirmar('Zerar exército?', `Apaga as tropas cadastradas em ${c.nome} (só no app).`, 'Zerar', true))
       store.set(st => { st.cidades.find(x => x.id === c.id).militar.unidades = {}; });
-  });
-  raiz.addEventListener('change', e => {
-    const t = e.target;
-    if (t.matches('[data-fora]')) store.set(st => { st.cidades.find(x => x.id === c.id).militar.fora = t.checked; });
-    else if (t.matches('[data-uni]')) { const u = lerGradeUnidades(raiz); store.set(st => { st.cidades.find(x => x.id === c.id).militar.unidades = u; }); }
   });
 }
 

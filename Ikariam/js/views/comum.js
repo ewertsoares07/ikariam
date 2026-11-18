@@ -95,6 +95,14 @@ export function gradeUnidades(valores = {}, tipo = null, mostrarRaras = store.ge
     <input id="u-${u.id}" type="number" inputmode="numeric" min="0" data-uni="${u.id}" value="${valores[u.id] || ''}" placeholder="0"></div>`).join('')}</div>`;
 }
 
+// Mesma grade, só leitura: cada unidade é um botão que abre o modal de quantidade
+export function gradeUnidadesInfo(valores = {}, tipo = null, mostrarRaras = store.get().config.mostrarRaras) {
+  const lista = UNIDADES.filter(u => (!tipo || u.tipo === tipo) && (mostrarRaras || !u.raro || valores[u.id] > 0));
+  const nf = new Intl.NumberFormat('pt-BR');
+  return `<div class="uni-info">${lista.map(u => `<button class="uni-t ${valores[u.id] > 0 ? 'tem' : 'zero'}" data-uni-ed="${u.id}" aria-label="${esc(u.nome)}">
+    <span class="ic">${u.icone}</span><b>${valores[u.id] > 0 ? nf.format(valores[u.id]) : '0'}</b><small>${esc(u.nome)}</small></button>`).join('')}</div>`;
+}
+
 export function lerGradeUnidades(raiz) {
   const out = {};
   raiz.querySelectorAll('[data-uni]').forEach(i => { const v = +i.value; if (v > 0) out[i.dataset.uni] = v; });

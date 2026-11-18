@@ -15,6 +15,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Cor, espaçamento, tema | `css/app.css` |
 | Menu em folha do botão do meio | `js/menu.js`, `css/menu.css` |
 | Folha que sobe de baixo (genérica) | `js/folha.js` |
+| Modal de edição (número, texto, campos, escolher) e balões de dica | `js/modal.js` (estilo no fim de `css/app.css`) |
 | Alarme, som, voz, notificação, agenda | `js/timers.js` |
 | Dados salvos no aparelho (estado) | `js/store.js` |
 | Login, sincronização, aliança | `js/cloud.js`, `js/config.js`, `firestore.rules` |
@@ -29,7 +30,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Arquivo | Tela | Usa |
 |---|---|---|
 | `inicio.js` | Início: briefing, checklist pré-sono, alarmes, atalhos | timers, calc, data |
-| `imperio.js` | Cidades, vinho de cada taverna, segurança dos portos | store, timers, data |
+| `imperio.js` | Cidades em sanfona só de leitura (abre uma por vez): habitantes/satisfação, vinho, segurança; editar = modal | store, timers, data, calc |
 | `militar.js` (maior: ~300 linhas) | Exército por cidade, viagem, waving/LC tank, pré-batalha, flancos | store, timers, data, calc |
 | `alvos.js` | Caderno de espionagem, leitor de relatório, saque | store, data, calc, parser |
 | `cronometros.js` | Alarmes, pirataria, recarga de milagres | store, timers, data |
@@ -44,9 +45,12 @@ Cada tela exporta `render`. As rotas são `#/tela/sub` e ficam em `js/app.js`.
 ## Núcleo (`js/`)
 
 - `data.js`: todas as regras do jogo (`UNIDADES`, `LINHAS`, `RECURSOS`, `PIRATARIA`, `MILAGRES`, `OFICINA`, `PRESETS_GUERRA`, `LC_PRESETS`, `VERSAO_APP`…).
-- `calc.js`: funções puras, sem tela (`distancia`, `tempoViagem`, `vinhoAgora`, `corrupcao`, `saque`, `resumoExercito`, `flancoNaval`…).
+- `calc.js`: funções puras, sem tela (`distancia`, `tempoViagem`, `vinhoAgora`, `habitantesAgora`, `humor`, `corrupcao`, `saque`, `resumoExercito`, `flancoNaval`…).
 - `store.js`: estado único no `localStorage` (`get`, `set`, `on`, `cidade`, `substituir`). Sem backup nem importação: a cópia de segurança é só o Firebase.
-- `ui.js`: formatação (`fmt`, `fmtDur`, `fmtHora`…), `toast`, `confirmar`, `copiar`, `baixar`, campos.
+- `ui.js`: formatação (`fmt`, `fmtDur`, `fmtHora`…), `toast`, `confirmar`, `copiar`, `baixar`, campos; reexporta os modais de `modal.js`.
+- `modal.js`: `modal`, `pedirNumero`, `pedirTexto`, `pedirCampos`, `escolher`; balão automático em qualquer `data-balao="texto"` (`data-balao-t` = título).
+
+Padrão de tela: mostrar informação em quadros (`.dado`, `.painel`) e editar tocando, com modal. Campos soltos só nas calculadoras.
 - `cloud.js`: Firebase; o SDK só é baixado quando a pessoa entra.
 - `config.js`: config do Firebase, `EMAIL_DONO`, papéis da aliança.
 

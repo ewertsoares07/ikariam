@@ -2,7 +2,9 @@
 // AJUDANTES DE TELA: formatação, avisos, diálogos, cópia e download
 // =====================================================================
 import { folha, esc } from './folha.js';
+import { modal } from './modal.js';
 export { esc };
+export { modal, pedirNumero, pedirTexto, pedirCampos, escolher, balao, fecharBalao, lerNumero } from './modal.js';
 
 export const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -56,7 +58,8 @@ export function toast(msg, tipo = '') {
   let el = document.getElementById('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
   el.className = 'toast ' + tipo;
-  el.textContent = msg;
+  const ic = tipo === 'ok' ? '✓' : tipo === 'erro' ? '!' : '';
+  el.innerHTML = `${ic ? `<i class="toast-ic">${ic}</i>` : ''}<span>${esc(msg)}</span>`;
   requestAnimationFrame(() => el.classList.add('vis'));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('vis'), 2600);
@@ -84,8 +87,8 @@ export function baixar(nome, conteudo, tipo = 'application/json') {
 export function confirmar(titulo, texto, ok = 'Confirmar', perigo = false) {
   return new Promise(res => {
     let resp = false;
-    const f = folha({
-      titulo, html: `<p class="fl-texto">${esc(texto)}</p>
+    const f = modal({
+      titulo, classe: 'md-centro' + (perigo ? ' md-perigo' : ''), html: `<p class="fl-texto">${esc(texto)}</p>
       <div class="fl-botoes"><button class="btn fantasma" data-fechar>Cancelar</button><button class="btn ${perigo ? 'perigo' : 'ouro'}" data-ok>${esc(ok)}</button></div>`,
       aoFechar: () => res(resp),
     });

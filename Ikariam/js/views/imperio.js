@@ -2,82 +2,125 @@
 import * as store from '../store.js';
 import * as T from '../timers.js';
 import { PAPEIS, CHECKLIST_MOVEL } from '../data.js';
-import { vinhoAgora, reposicaoVinho, corrupcao, nivelSemCorrupcao, lerCoords } from '../calc.js';
-import { esc, fmt, fmtPct, fmtQuando, folha, toast, confirmar, campoNum, campoCoords } from '../ui.js';
+import { vinhoAgora, reposicaoVinho, corrupcao, nivelSemCorrupcao, lerCoords, habitantesAgora, humor } from '../calc.js';
+import { esc, fmt, fmtK, fmtPct, fmtQuando, folha, modal, toast, confirmar, campoCoords, pedirNumero, pedirTexto, pedirCampos } from '../ui.js';
 import { focarCidade } from './militar.js';
 
-const abertas = new Set();
+let aberta = null;
 let filtro = 'todas';
 let ordem = 'minha';
 
 const papel = id => PAPEIS.find(p => p.id === id);
 const corNivel = { verde: 'verde', ok: 'ok', amarelo: 'amarelo', vermelho: 'vermelho' };
-const textoNivel = { verde: 'mais de 7 dias', ok: 'entre 2 e 7 dias', amarelo: 'menos de 48h', vermelho: 'CRÍTICO: menos de 12h' };
+const textoCurto = { verde: '+7 dias', ok: '2 a 7 dias', amarelo: '< 48h', vermelho: '⚠️ < 12h' };
+const sinal = n => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+const BALAO_HAB = 'Na Prefeitura do jogo: habitantes, limite de moradia e satisfação. O app projeta sozinho: cresce satisfação × 0,02 por hora e cada habitante novo tira 1 de satisfação.';
+const BALAO_VINHO = 'Informe o vinho no armazém e quanto a taverna consome por hora. O app desconta sozinho e avisa antes de secar.';
+const BALAO_CORR = 'A Residência (ou o Palácio, na capital) precisa ter nível igual ao número de colônias. Abaixo disso, a corrupção tira satisfação e produção.';
+const BALAO_ALARME = '1 Lança-Chamas ou 1 Trirreme parado no porto força 1 rodada naval e trava a pilhagem rápida. Não deixe Submergível parado: é caro.';
 
-function cabecalho(c, v) {
+function estadoHab(h) {
+  if (!h || h.sat == null) return null;
+  const hm = h.humor;
+  const cresce = `${sinal(+h.cresceH.toFixed(2))}/h`;
+  switch (h.estado) {
+    case 'cheia': return { cor: 'verde', t: 'Prefeitura lotada', d: h.sat > 0 ? `Sobram ${fmt(h.sat)} de satisfação: suba a Prefeitura para crescer mais.` : 'Lotada e sem folga de satisfação.' };
+    case 'crescendo': return { cor: hm.cor, t: `Crescendo ${cresce}`, d: h.cheiaEm ? `Lota ${fmtQuando(h.cheiaEm)}` : `Estabiliza perto de ${fmt(h.equilibrio)} habitantes`, fim: h.cheiaEm };
+    case 'trava': return { cor: 'amarelo', t: `Crescendo ${cresce}, mas para em ${fmt(h.equilibrio)}`, d: `Faltam ${fmt(h.max - h.equilibrio)} de satisfação para lotar: sirva mais vinho ou amplie o museu.` };
+    case 'parada': return { cor: 'ok', t: 'População parada', d: 'Satisfação zerada: sirva mais vinho na taverna ou amplie o museu.' };
+    case 'caindo': return { cor: 'vermelho', t: `Perdendo ${fmt(Math.abs(h.cresceH), 1)} por hora`, d: 'Satisfação negativa: aumente o vinho servido já, senão os trabalhadores vão embora.' };
+    default: return null;
+  }
+}
+
+function cabecalho(c, v, h) {
   const p = papel(c.papel);
-  return `<button class="cid-topo" data-abrir="${c.id}">
+  const hm = h?.humor;
+  return `<button class="cid-topo" data-abrir="${c.id}" aria-expanded="${aberta === c.id}">
     <span class="ic">${c.capital ? '👑' : p ? p.icone : '🏛️'}</span>
-    <span class="meio"><b>${esc(c.nome || 'Sem nome')}</b><small>${c.coords ? `[${esc(c.coords)}]` : 'sem coordenada'} · ${esc(p ? p.nome : c.capital ? 'Capital' : 'sem papel')}${c.papel === 'movel' && c.movel?.ativa ? ' · 🟢 em guerra' : ''}</small></span>
+    <span class="meio"><b>${esc(c.nome || 'Sem nome')}</b><small>${c.coords ? `[${esc(c.coords)}]` : 'sem coordenada'} · ${esc(p ? p.nome : c.capital ? 'Capital' : 'sem papel')}${c.papel === 'movel' && c.movel?.ativa ? ' · 🟢 em guerra' : ''}</small>
+      <span class="selos">
+        ${h ? `<span class="selo ${h.estado === 'cheia' ? 'verde' : ''}">👥 ${fmtK(h.atual)}${h.max ? `/${fmtK(h.max)}` : ''}</span>` : ''}
+        ${hm ? `<span class="selo ${hm.cor}">${hm.icone} ${sinal(h.sat)}</span>` : ''}
+        ${c.alarme ? '' : '<span class="selo amarelo">🔕 sem alarme</span>'}
+      </span></span>
     <span class="fim" style="text-align:right">
       ${v ? `<span class="flex" style="justify-content:flex-end;gap:6px"><span class="semaforo ${corNivel[v.nivel]}"></span><span class="contagem pequeno" data-fim="${v.zeraEm}" data-curto data-zero="SECOU">…</span></span>` : '<span class="mut pequeno">🍇 —</span>'}
-      <span class="pequeno mut" style="display:block">${c.alarme ? '🔔 alarme' : '🔕 sem alarme'}</span>
     </span>
     <span class="seta">›</span></button>`;
 }
 
-function corpo(c, v, s) {
+const dado = (acao, rotulo, valor, sub = '', cls = '') =>
+  `<button class="dado ${valor == null ? 'falta' : ''} ${cls}" data-a="${acao}"><span>${rotulo}</span><b>${valor ?? 'tocar p/ pôr'}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+
+function corpo(c, v, h, s) {
   const total = s.cidades.length;
   const cap = s.config.capMercante || 500;
   const corr = c.residencia != null ? corrupcao(c.residencia, total) : null;
   const necessario = nivelSemCorrupcao(total);
   const p = papel(c.papel);
+  const eh = estadoHab(h);
+  const pct = h?.ocupacao != null ? Math.round(h.ocupacao * 100) : null;
+  const estoqueBruto = v ? Math.floor(v.restante) : c.vinho?.estoque;
+  const satV = h?.sat ?? c.habitantes?.satisfacao ?? null;
+  const hmV = humor(satV);
+  const checks = CHECKLIST_MOVEL.filter(it => c.movel?.checklist?.[it.id]).length;
+
   return `<div class="cid-corpo" data-cidade="${c.id}">
-    <div class="sec-t">🍇 Vinho e taverna</div>
-    <div class="grade2">
-      <label class="campo"><span>Vinho no armazém</span>${campoNum('estoque', v ? Math.floor(v.restante) : c.vinho?.estoque ?? '', 'min="0" placeholder="ex.: 25000"')}</label>
-      <label class="campo"><span>Consumo / hora</span>${campoNum('consumo', c.vinho?.consumo ?? '', 'min="0" placeholder="ex.: 240"')}</label>
-    </div>
-    <button class="btn egeu bloco" style="margin-top:8px" data-salvar-vinho>✓ Atualizar vinho agora</button>
-    ${v ? `<div class="resultado">
-      <div class="flex entre"><span class="mut pequeno">Seca em</span><span class="chip ${corNivel[v.nivel]}">${textoNivel[v.nivel]}</span></div>
-      <div class="grande contagem" data-fim="${v.zeraEm}" data-zero="SECOU">…</div>
-      <div class="linha"><span>Zera ${esc(fmtQuando(v.zeraEm))}</span><b>${fmt(v.restante)} restantes</b></div>
-      <div class="linha"><span>Atualizado</span><b>${esc(fmtQuando(c.vinho.em))}</b></div>
-    </div>
-    <div class="sec-t">🚢 Reposição a partir da capital</div>
-    <div class="grade3">${[7, 14, 30].map(d => { const r = reposicaoVinho(c.vinho.consumo, d, v.restante, cap); return `<button class="kpi" data-repor="${r.precisa}" style="text-align:left"><span>${d} dias</span><b>${fmt(r.precisa)}</b><span>${fmt(r.barcos)} barcos</span></button>`; }).join('')}</div>
-    <p class="pequeno mut" style="margin:6px 2px 0">Toque num prazo para registrar que o vinho chegou. Barco = ${fmt(cap)} de carga.</p>
-    <div class="flex" style="margin-top:8px">
-      ${campoNum('chegou', '', 'class="entrada cresce" placeholder="Chegou quanto vinho?" min="0"')}
-      <button class="btn mini" data-chegou>＋ Abasteci</button>
-    </div>
-    <button class="btn fantasma mini bloco" style="margin-top:8px" data-alarme-vinho>⏰ Alarme 3h antes de secar</button>` : '<p class="pequeno mut" style="margin:8px 2px 0">Preencha só quando abastecer: o app conta sozinho até a próxima vez.</p>'}
-
-    <div class="sec-t">🛡️ Segurança e gestão</div>
-    <label class="marcar"><input type="checkbox" data-alarme ${c.alarme ? 'checked' : ''}>
-      <span class="cresce">Barco Alarme no porto<small class="mut" style="display:block;font-weight:600">1 Lança-Chamas ou 1 Trirreme força 1 rodada naval e trava pilhagem rápida. Não deixe Submergível parado: é caro.</small></span></label>
-    <div class="grade2" style="margin-top:8px">
-      <label class="campo"><span>${c.capital ? 'Nível do Palácio' : 'Nível da Residência'}</span>${campoNum('residencia', c.residencia ?? '', 'min="0" max="60" placeholder="0"')}</label>
-      <div class="kpi ${corr == null ? '' : corr > 0 ? 'vermelho' : 'verde'}"><span>Corrupção</span><b>${corr == null ? '—' : fmtPct(corr, 1)}</b><span>precisa nível ${necessario}</span></div>
+    <div class="painel">
+      <div class="painel-t">👥 Habitantes <i class="info-i" data-balao-t="Habitantes e satisfação" data-balao="${esc(BALAO_HAB)}">i</i>
+        <span class="dir"><button class="btn mini egeu" data-a="prefeitura">🏛️ Prefeitura</button></span></div>
+      ${pct != null ? `<div class="barra-p ${h.estado === 'cheia' ? 'cheia' : h.estado === 'caindo' ? 'caindo' : ''}"><i style="width:${pct}%"></i></div>
+      <div class="barra-leg"><span><b>${fmt(h.atual)}</b> de ${fmt(h.max)}</span><span>${pct}% · ${fmt(h.livres)} vaga${h.livres === 1 ? '' : 's'}</span></div>` : ''}
+      <div class="dados">
+        ${dado('hab-atual', 'Habitantes', h ? fmt(h.atual) : null, h?.em ? 'projetado agora' : '')}
+        ${dado('hab-max', 'Limite', c.habitantes?.max ? fmt(c.habitantes.max) : null, 'moradias')}
+        ${dado('hab-sat', 'Satisfação', satV != null ? sinal(satV) : null, hmV ? `${hmV.icone} ${hmV.nome}` : '', hmV?.cor || '')}
+      </div>
+      ${eh ? `<div class="humor ${eh.cor}"><span class="rosto">${h.humor.icone}</span><div class="cresce"><b>${esc(eh.t)}</b><small>${esc(eh.d)}${eh.fim ? ` · faltam <span data-fim="${eh.fim}" data-curto data-zero="lotou">…</span>` : ''}</small></div>
+        ${eh.fim ? '<button class="icone-btn" data-a="alarme-hab" aria-label="Avisar quando lotar">⏰</button>' : ''}</div>` : ''}
     </div>
 
-    ${c.papel === 'movel' ? `
-    <div class="sec-t">🧭 Cidade móvel</div>
-    ${CHECKLIST_MOVEL.map(it => `<label class="marcar" style="margin-bottom:6px"><input type="checkbox" data-movel="${it.id}" ${c.movel?.checklist?.[it.id] ? 'checked' : ''}> ${esc(it.texto)}</label>`).join('')}
-    <div class="grade2" style="margin-top:6px">
-      <button class="btn ${c.movel?.ativa ? '' : 'ouro'}" data-movel-ativa>${c.movel?.ativa ? '⏸️ Pausar' : '⚔️ Ativar na guerra'}</button>
-      <button class="btn perigo" data-movel-abandonar>🏳️ Abandonar móvel</button>
+    <div class="painel">
+      <div class="painel-t">🍇 Vinho e taverna <i class="info-i" data-balao-t="Vinho" data-balao="${esc(BALAO_VINHO)}">i</i>
+        ${v ? `<span class="dir"><span class="chip ${corNivel[v.nivel]}">${textoCurto[v.nivel]}</span></span>` : ''}</div>
+      <div class="dados d2">
+        ${dado('vinho-estoque', 'No armazém', estoqueBruto != null ? fmt(estoqueBruto) : null, c.vinho?.em ? `atualizado ${fmtQuando(c.vinho.em)}` : '')}
+        ${dado('vinho-consumo', 'Consumo / hora', c.vinho?.consumo ? fmt(c.vinho.consumo) : null, c.vinho?.consumo ? `${fmt(c.vinho.consumo * 24)} por dia` : '')}
+      </div>
+      ${v ? `<div class="contador-v"><div><small>Seca em</small><span class="contagem" data-fim="${v.zeraEm}" data-zero="SECOU">…</span></div><div style="text-align:right"><small>Zera</small><b class="pequeno">${esc(fmtQuando(v.zeraEm))}</b></div></div>
+      <div class="acoes-c"><button class="btn ouro" data-a="abastecer">🚢 Abastecer</button><button class="btn" data-a="alarme-vinho">⏰ Alarme 3h antes</button></div>
+      <p class="pequeno mut" style="margin:8px 2px 0">Para 7 dias: ${fmt(reposicaoVinho(c.vinho.consumo, 7, v.restante, cap).precisa)} · barco = ${fmt(cap)}</p>`
+      : '<p class="pequeno mut" style="margin:8px 2px 0">Toque nos quadros para pôr o estoque e o consumo: o app conta sozinho até a próxima vez.</p>'}
+    </div>
+
+    <div class="painel">
+      <div class="painel-t">🛡️ Segurança e gestão</div>
+      <div class="dados d2">
+        <button class="dado ${c.alarme ? 'liga' : 'desliga'}" data-a="alarme"><span>Barco alarme <i class="info-i" data-balao="${esc(BALAO_ALARME)}">i</i></span><b>${c.alarme ? '🔔 No porto' : '🔕 Sem barco'}</b><small>toque para trocar</small></button>
+        ${dado('residencia', c.capital ? 'Palácio' : 'Residência', c.residencia != null ? `Nível ${c.residencia}` : null, `precisa ${necessario}`)}
+      </div>
+      <div class="humor ${corr == null ? '' : corr > 0 ? 'vermelho' : 'verde'}"><span class="rosto">${corr == null ? '⚖️' : corr > 0 ? '💸' : '✅'}</span>
+        <div class="cresce"><b>Corrupção ${corr == null ? '—' : fmtPct(corr, 1)}</b><small>${corr == null ? 'Ponha o nível do prédio para calcular' : corr > 0 ? `Suba para o nível ${necessario} para zerar` : 'Zerada nesta cidade'}</small></div>
+        <i class="info-i" data-balao-t="Corrupção" data-balao="${esc(BALAO_CORR)}">i</i></div>
+    </div>
+
+    ${c.papel === 'movel' ? `<div class="painel">
+      <div class="painel-t">🧭 Cidade móvel <span class="dir"><span class="chip ${checks === CHECKLIST_MOVEL.length ? 'verde' : 'amarelo'}">${checks}/${CHECKLIST_MOVEL.length} prontos</span></span></div>
+      <div class="check-mini">${CHECKLIST_MOVEL.map(it => `<span class="selo ${c.movel?.checklist?.[it.id] ? 'verde' : ''}">${c.movel?.checklist?.[it.id] ? '✓' : '○'} ${esc(it.texto.split(' (')[0])}</span>`).join('')}</div>
+      <div class="acoes-c"><button class="btn" data-a="movel-check">☑️ Checklist</button><button class="btn ${c.movel?.ativa ? '' : 'ouro'}" data-a="movel-ativa">${c.movel?.ativa ? '⏸️ Pausar' : '⚔️ Ativar'}</button><button class="btn perigo" data-a="movel-abandonar">🏳️</button></div>
     </div>` : ''}
 
-    <div class="sec-t">📝 Notas</div>
-    <textarea class="entrada" name="notas" rows="2" placeholder="Ex.: ilha de cristal, vizinho perigoso…">${esc(c.notas || '')}</textarea>
-    <div class="grade3" style="margin-top:10px">
-      <button class="btn mini" data-editar>✏️ Editar</button>
-      <button class="btn mini" data-exercito>🛡️ Exército</button>
-      <button class="btn mini" data-apagar>🗑️ Apagar</button>
+    <div class="painel">
+      <div class="painel-t">📝 Notas</div>
+      <button class="nota-c ${c.notas ? '' : 'vazia'}" data-a="notas">${c.notas ? esc(c.notas) : 'Toque para anotar (ex.: ilha de cristal, vizinho perigoso…)'}</button>
     </div>
-    ${p ? `<p class="pequeno mut" style="margin:8px 2px 0">${p.icone} ${esc(p.dica)}</p>` : ''}
+    ${p ? `<p class="pequeno mut" style="margin:10px 2px 0">${p.icone} ${esc(p.dica)}</p>` : ''}
+    <div class="cid-rodape">
+      <button class="btn" data-a="editar"><i>✏️</i>Editar</button>
+      <button class="btn" data-a="exercito"><i>🛡️</i>Exército</button>
+      <button class="btn" data-a="apagar"><i>🗑️</i>Apagar</button>
+    </div>
   </div>`;
 }
 
@@ -112,7 +155,7 @@ export function formCidade(c = null) {
       if (capital) s.cidades.forEach(x => { x.capital = false; });
       const alvo = novo ? c : s.cidades.find(x => x.id === c.id);
       Object.assign(alvo, { nome, coords: cc ? `${cc.x}:${cc.y}` : coordsTxt, papel: papelSel, capital });
-      if (novo) { s.cidades.push(alvo); abertas.add(alvo.id); }
+      if (novo) { s.cidades.push(alvo); aberta = alvo.id; }
       s.cidades.sort((a, b) => (b.capital - a.capital));
     });
     toast(novo ? 'Cidade adicionada ✔' : 'Cidade salva ✔', 'ok');
@@ -147,87 +190,201 @@ function formVarias() {
 export function render(raiz, ctx) {
   const { s, ir } = ctx;
   const agora = Date.now();
-  let cs = s.cidades.map(c => ({ c, v: vinhoAgora(c.vinho, agora) }));
+  let cs = s.cidades.map(c => ({ c, v: vinhoAgora(c.vinho, agora), h: habitantesAgora(c.habitantes, agora) }));
   const total = cs.length;
   const comVinho = cs.filter(x => x.v);
   const pior = [...comVinho].sort((a, b) => a.v.segRest - b.v.segRest)[0];
   const alarmes = s.cidades.filter(c => c.alarme).length;
   const corruptas = s.cidades.filter(c => c.residencia != null && corrupcao(c.residencia, total) > 0).length;
+  const comHab = cs.filter(x => x.h);
+  const popTotal = comHab.reduce((a, x) => a + x.h.atual, 0);
+  const popMax = comHab.reduce((a, x) => a + (x.h.max || 0), 0);
+  const tristes = cs.filter(x => x.h?.sat != null && x.h.sat < 0);
+  const piorHumor = [...cs.filter(x => x.h?.sat != null)].sort((a, b) => a.h.sat - b.h.sat)[0];
   if (filtro === 'urgente') cs = cs.filter(x => x.v && (x.v.nivel === 'vermelho' || x.v.nivel === 'amarelo'));
   if (filtro === 'alarme') cs = cs.filter(x => !x.c.alarme);
+  if (filtro === 'humor') cs = cs.filter(x => x.h?.sat != null && (x.h.sat < 0 || x.h.estado === 'trava' || x.h.estado === 'parada'));
   if (ordem === 'vinho') cs.sort((a, b) => (a.v ? a.v.segRest : 1e12) - (b.v ? b.v.segRest : 1e12));
+  if (aberta && !s.cidades.some(c => c.id === aberta)) aberta = null;
 
   raiz.innerHTML = `
-  <div class="tela-titulo"><div><h2>Império</h2><p>${total} cidade${total === 1 ? '' : 's'} · toque numa cidade para abrir</p></div>
+  <div class="tela-titulo"><div><h2>Império</h2><p>${total} cidade${total === 1 ? '' : 's'} · toque numa cidade para ver tudo</p></div>
     <div class="acoes"><button class="btn mini" data-varias>☰ Várias</button><button class="btn ouro mini" data-nova>＋ Cidade</button></div></div>
   ${total ? `
   <div class="grade2" style="margin-bottom:12px">
-    <div class="kpi ${pior ? corNivel[pior.v.nivel] === 'ok' ? '' : corNivel[pior.v.nivel] : ''}"><span>Menor vinho</span><b>${pior ? `<em data-fim="${pior.v.zeraEm}" data-curto>…</em>` : '—'}</b><span>${pior ? esc(pior.c.nome) : 'sem dados'}</span></div>
-    <div class="kpi ${alarmes === total ? 'verde' : 'amarelo'}"><span>Barco alarme</span><b>${alarmes}/${total}</b><span>portos protegidos</span></div>
-    <div class="kpi ${corruptas ? 'vermelho' : 'verde'}"><span>Corrupção</span><b>${corruptas ? `${corruptas} cidade(s)` : 'zero'}</b><span>nível ${nivelSemCorrupcao(total)} em todas</span></div>
-    <div class="kpi ouro"><span>Barco mercante</span><b>${fmt(s.config.capMercante)}</b><span>de carga cada</span></div>
+    <div class="kpi ${pior ? corNivel[pior.v.nivel] === 'ok' ? '' : corNivel[pior.v.nivel] : ''}" data-balao-t="Menor vinho" data-balao="${esc(pior ? `${pior.c.nome} é a próxima taverna a secar.` : 'Ponha o vinho e o consumo de cada cidade para o app contar.')}"><span>Menor vinho</span><b>${pior ? `<em data-fim="${pior.v.zeraEm}" data-curto>…</em>` : '—'}</b><span>${pior ? esc(pior.c.nome) : 'sem dados'}</span></div>
+    <div class="kpi ${comHab.length ? 'ouro' : ''}" data-balao-t="População do império" data-balao="${esc(comHab.length ? `${fmt(popTotal)} habitantes em ${comHab.length} cidade(s)${popMax ? `, de ${fmt(popMax)} moradias (${Math.round(popTotal / popMax * 100)}% ocupado)` : ''}.` : 'Abra uma cidade e toque em 🏛️ Prefeitura para pôr os habitantes.')}"><span>Habitantes</span><b>${comHab.length ? fmtK(popTotal) : '—'}</b><span>${popMax ? `de ${fmtK(popMax)} · ${Math.round(popTotal / popMax * 100)}%` : 'sem dados'}</span></div>
+    <div class="kpi ${piorHumor ? piorHumor.h.humor.cor === 'ok' ? '' : piorHumor.h.humor.cor : ''}" data-balao-t="Satisfação" data-balao="${esc(tristes.length ? `${tristes.length} cidade(s) perdendo gente: ${tristes.map(x => x.c.nome).join(', ')}.` : 'Nenhuma cidade com satisfação negativa.')}"><span>Pior humor</span><b>${piorHumor ? `${piorHumor.h.humor.icone} ${sinal(piorHumor.h.sat)}` : '—'}</b><span>${piorHumor ? esc(piorHumor.c.nome) : 'sem dados'}</span></div>
+    <div class="kpi ${alarmes === total ? 'verde' : 'amarelo'}" data-balao-t="Barco alarme" data-balao="${esc(BALAO_ALARME)}"><span>Barco alarme</span><b>${alarmes}/${total}</b><span>portos protegidos</span></div>
+    <div class="kpi ${corruptas ? 'vermelho' : 'verde'}" data-balao-t="Corrupção" data-balao="${esc(BALAO_CORR)}"><span>Corrupção</span><b>${corruptas ? `${corruptas} cidade(s)` : 'zero'}</b><span>nível ${nivelSemCorrupcao(total)} em todas</span></div>
+    <button class="kpi ouro" style="text-align:left;color:inherit" data-cap><span>Barco mercante ✎</span><b>${fmt(s.config.capMercante)}</b><span>de carga cada</span></button>
   </div>
   <div class="flex quebra" style="margin-bottom:10px">
     <div class="linha-chips cresce">
-      ${[['todas', 'Todas'], ['urgente', '🍇 Urgentes'], ['alarme', '🔕 Sem alarme']].map(([id, n]) => `<button class="chip ${filtro === id ? 'ativo' : ''}" data-filtro="${id}">${n}</button>`).join('')}
+      ${[['todas', 'Todas'], ['urgente', '🍇 Urgentes'], ['humor', '😟 Satisfação'], ['alarme', '🔕 Sem alarme']].map(([id, n]) => `<button class="chip ${filtro === id ? 'ativo' : ''}" data-filtro="${id}">${n}</button>`).join('')}
     </div>
     <button class="chip" data-ordem>${ordem === 'vinho' ? '⏳ por vinho' : '📌 minha ordem'}</button>
   </div>
-  ${cs.map(({ c, v }) => `<div class="cid ${abertas.has(c.id) ? 'aberta' : ''}" id="cid-${c.id}">${cabecalho(c, v)}${corpo(c, v, s)}</div>`).join('') || '<div class="vazio">Nenhuma cidade neste filtro.</div>'}
+  ${cs.map(({ c, v, h }) => `<div class="cid ${aberta === c.id ? 'aberta' : ''}" id="cid-${c.id}">${cabecalho(c, v, h)}${corpo(c, v, h, s)}</div>`).join('') || '<div class="vazio">Nenhuma cidade neste filtro.</div>'}
   ` : `<div class="card"><div class="vazio"><span class="grande">🏘️</span>Nenhuma cidade ainda.<br>Adicione uma por uma ou várias de uma vez.</div>
     <div class="grade2"><button class="btn ouro" data-nova>＋ Cidade</button><button class="btn" data-varias>☰ Várias</button></div></div>`}`;
 
-  const cid = el => store.get().cidades.find(c => c.id === el.closest('[data-cidade]')?.dataset.cidade);
   const alterar = (id, fn) => store.set(st => { const c = st.cidades.find(x => x.id === id); if (c) fn(c, st); });
 
   raiz.addEventListener('click', async e => {
     const t = e.target;
     const ab = t.closest('[data-abrir]');
-    if (ab) { const id = ab.dataset.abrir; abertas.has(id) ? abertas.delete(id) : abertas.add(id); document.getElementById('cid-' + id)?.classList.toggle('aberta'); return; }
+    if (ab) return alternar(raiz, ab.dataset.abrir);
     if (t.closest('[data-nova]')) return formCidade();
     if (t.closest('[data-varias]')) return formVarias();
+    if (t.closest('[data-cap]')) {
+      const n = await pedirNumero({ titulo: '🚢 Barco mercante', sub: 'Carga de cada barco', valor: s.config.capMercante, min: 1, sufixo: 'carga', atalhos: [500, 750, 1000, 1250, 1500].map(x => ({ rotulo: x === 500 ? 'Base' : 'Porto', valor: x })) });
+      if (n != null) store.set(st => { st.config.capMercante = n; });
+      return;
+    }
     const fl = t.closest('[data-filtro]'); if (fl) { filtro = fl.dataset.filtro; return ctx.atualizar(); }
     if (t.closest('[data-ordem]')) { ordem = ordem === 'vinho' ? 'minha' : 'vinho'; return ctx.atualizar(); }
-    const c = cid(t); if (!c) return;
-    const box = t.closest('[data-cidade]');
-    if (t.closest('[data-salvar-vinho]')) {
-      const estoque = +box.querySelector('[name=estoque]').value, consumo = +box.querySelector('[name=consumo]').value;
-      if (!(consumo > 0)) return toast('Informe o consumo por hora da taverna', 'erro');
-      alterar(c.id, x => { x.vinho = { estoque: Math.max(0, estoque || 0), consumo, em: Date.now() }; });
-      return toast('🍇 Vinho atualizado', 'ok');
+    const btn = t.closest('[data-a]');
+    const id = t.closest('[data-cidade]')?.dataset.cidade;
+    const c = id && store.cidade(id);
+    if (!btn || !c) return;
+    await acao(btn.dataset.a, c, { alterar, ir, s: store.get() });
+  });
+}
+
+// Abre uma cidade e fecha a anterior (sanfona com uma só aberta)
+function alternar(raiz, id) {
+  const ant = aberta;
+  if (ant) { const a = raiz.querySelector('#cid-' + ant); a?.classList.remove('aberta'); a?.querySelector('[data-abrir]')?.setAttribute('aria-expanded', 'false'); }
+  if (ant === id) { aberta = null; return; }
+  aberta = id;
+  const el = raiz.querySelector('#cid-' + id);
+  if (!el) return;
+  el.classList.add('aberta');
+  el.querySelector('[data-abrir]')?.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(() => {
+    const r = el.getBoundingClientRect();
+    const topo = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topo-h')) || 58;
+    if (r.top < topo + 8 || r.top > window.innerHeight * 0.45) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+async function acao(a, c, { alterar, ir, s }) {
+  const agora = Date.now();
+  const h = habitantesAgora(c.habitantes, agora);
+  const v = vinhoAgora(c.vinho, agora);
+  const total = s.cidades.length;
+  // guarda os habitantes projetados como novo ponto de partida
+  const baseHab = () => ({ atual: h ? h.atual : c.habitantes.atual, max: c.habitantes.max, satisfacao: h ? h.sat : c.habitantes.satisfacao, em: agora });
+
+  switch (a) {
+    case 'prefeitura': {
+      const r = await pedirCampos({
+        titulo: '🏛️ Prefeitura', sub: c.nome, colunas: 1,
+        dica: 'Copie os números da Prefeitura no jogo. Satisfação pode ser negativa.',
+        campos: [
+          { name: 'atual', rotulo: 'Habitantes agora', valor: h?.atual ?? c.habitantes?.atual ?? '', placeholder: 'ex.: 1.840' },
+          { name: 'max', rotulo: 'Capacidade (moradias)', valor: c.habitantes?.max ?? '', placeholder: 'ex.: 2.256' },
+          { name: 'satisfacao', rotulo: 'Satisfação', valor: h?.sat ?? c.habitantes?.satisfacao ?? '', placeholder: 'ex.: 196 ou -20', negativo: true },
+        ],
+      });
+      if (!r) return;
+      if (r.atual == null) return toast('Informe pelo menos os habitantes', 'erro');
+      alterar(c.id, x => { x.habitantes = { atual: Math.max(0, r.atual), max: r.max > 0 ? r.max : null, satisfacao: r.satisfacao, em: Date.now() }; });
+      return toast(`👥 ${c.nome} atualizada`, 'ok');
     }
-    const rep = t.closest('[data-repor]');
-    if (rep) { box.querySelector('[name=chegou]').value = rep.dataset.repor; box.querySelector('[name=chegou]').focus(); return; }
-    if (t.closest('[data-chegou]')) {
-      const qtd = +box.querySelector('[name=chegou]').value;
-      if (!(qtd > 0)) return toast('Quanto vinho chegou?', 'erro');
-      alterar(c.id, x => { const v = vinhoAgora(x.vinho); x.vinho = { ...x.vinho, estoque: Math.floor((v ? v.restante : 0) + qtd), em: Date.now() }; });
-      return toast(`🍇 +${fmt(qtd)} em ${c.nome}`, 'ok');
+    case 'hab-atual': {
+      const n = await pedirNumero({ titulo: '👥 Habitantes', sub: c.nome, rotulo: 'Quantos moram agora', valor: h?.atual ?? c.habitantes?.atual ?? '', min: 0, passos: [-100, -10, 10, 100], sufixo: 'hab.' });
+      if (n == null) return;
+      alterar(c.id, x => { x.habitantes = { ...baseHab(), atual: n }; });
+      return toast('👥 Habitantes salvos', 'ok');
     }
-    if (t.closest('[data-alarme-vinho]')) {
-      const v = vinhoAgora(c.vinho);
+    case 'hab-max': {
+      const n = await pedirNumero({ titulo: '🏠 Capacidade', sub: c.nome, rotulo: 'Limite de moradias da Prefeitura', valor: c.habitantes?.max ?? '', min: 0, limpar: true, sufixo: 'moradias' });
+      if (n === undefined) return;
+      alterar(c.id, x => { x.habitantes = { ...baseHab(), max: n || null, atual: h ? h.atual : x.habitantes.atual }; });
+      return toast('🏠 Capacidade salva', 'ok');
+    }
+    case 'hab-sat': {
+      const n = await pedirNumero({ titulo: '😊 Satisfação', sub: c.nome, rotulo: 'Satisfação na Prefeitura', valor: h?.sat ?? c.habitantes?.satisfacao ?? '', negativo: true, passos: [-50, -10, 10, 50],
+        dica: 'Eufórica ≥ 300 · Feliz ≥ 50 · Neutra ≥ 0 · abaixo de 0 a cidade perde gente.' });
+      if (n == null) return;
+      alterar(c.id, x => { x.habitantes = { ...baseHab(), atual: h ? h.atual : x.habitantes.atual, satisfacao: n }; });
+      return toast(`${humor(n).icone} Satisfação salva`, 'ok');
+    }
+    case 'alarme-hab':
+      if (h?.cheiaEm) T.novoTimer({ nome: `${c.nome}: Prefeitura lotada`, icone: '👥', fim: h.cheiaEm, tipo: 'habitantes', ref: c.id });
+      return;
+    case 'vinho-estoque': {
+      const n = await pedirNumero({ titulo: '🍇 Vinho no armazém', sub: c.nome, valor: v ? Math.floor(v.restante) : c.vinho?.estoque ?? '', min: 0, passos: [-1000, 1000, 5000], sufixo: 'vinho' });
+      if (n == null) return;
+      alterar(c.id, x => { x.vinho = { ...x.vinho, estoque: n, em: Date.now() }; });
+      return toast(c.vinho?.consumo ? '🍇 Vinho atualizado' : '🍇 Agora ponha o consumo por hora', 'ok');
+    }
+    case 'vinho-consumo': {
+      const n = await pedirNumero({ titulo: '🍷 Consumo da taverna', sub: c.nome, rotulo: 'Vinho servido por hora', valor: c.vinho?.consumo ?? '', min: 0, passos: [-10, 10, 50], sufixo: '/ hora' });
+      if (n == null) return;
+      alterar(c.id, x => { x.vinho = { estoque: v ? Math.floor(v.restante) : x.vinho.estoque, consumo: n || null, em: Date.now() }; });
+      return toast('🍷 Consumo salvo', 'ok');
+    }
+    case 'abastecer': {
+      const cap = s.config.capMercante || 500;
+      const atalhos = [3, 7, 14, 30].map(d => { const r = reposicaoVinho(c.vinho.consumo, d, v.restante, cap); return { rotulo: `${d} dias`, valor: r.precisa, sub: `${fmt(r.barcos)} barco${r.barcos === 1 ? '' : 's'}` }; }).filter(x => x.valor > 0);
+      const n = await pedirNumero({ titulo: '🚢 Abastecer vinho', sub: c.nome, rotulo: 'Quanto vinho chegou', min: 0, somar: true, base: Math.floor(v.restante), atalhos, passos: [cap, cap * 5, cap * 10], botao: 'Abasteci', sufixo: 'vinho',
+        dica: atalhos.length ? 'Toque num prazo para preencher o que falta até lá.' : '' });
+      if (!n) return;
+      alterar(c.id, x => { const w = vinhoAgora(x.vinho); x.vinho = { ...x.vinho, estoque: Math.floor((w ? w.restante : 0) + n), em: Date.now() }; });
+      return toast(`🍇 +${fmt(n)} em ${c.nome}`, 'ok');
+    }
+    case 'alarme-vinho': {
       const fim = v.zeraEm - 3 * 3600e3;
       if (fim <= Date.now()) return toast('Faltam menos de 3h: abasteça já!', 'erro');
       return T.novoTimer({ nome: `Vinho de ${c.nome} seca em 3h`, icone: '🍇', fim, tipo: 'vinho', ref: c.id });
     }
-    if (t.closest('[data-movel-ativa]')) return alterar(c.id, x => { x.movel.ativa = !x.movel.ativa; });
-    if (t.closest('[data-movel-abandonar]')) {
+    case 'alarme':
+    { const novo = !c.alarme;
+      alterar(c.id, x => { x.alarme = novo; });
+      return toast(novo ? '🔔 Barco alarme no porto' : '🔕 Porto sem barco alarme', novo ? 'ok' : ''); }
+    case 'residencia': {
+      const nec = nivelSemCorrupcao(total);
+      const n = await pedirNumero({ titulo: c.capital ? '🏛️ Palácio' : '🏛️ Residência do Governador', sub: c.nome, rotulo: 'Nível do prédio', valor: c.residencia ?? '', min: 0, max: 60, passos: [-1, 1], limpar: true,
+        atalhos: [{ rotulo: 'Sem corrupção', valor: nec, texto: `Nível ${nec}` }], dica: `Com ${total} cidades, nível <b>${nec}</b> zera a corrupção.` });
+      if (n === undefined) return;
+      alterar(c.id, x => { x.residencia = n; });
+      return toast(n == null ? 'Nível apagado' : `Nível ${n} · corrupção ${fmtPct(corrupcao(n, total), 1)}`, 'ok');
+    }
+    case 'movel-check': return checklistMovel(c);
+    case 'movel-ativa':
+    { const novo = !c.movel?.ativa;
+      alterar(c.id, x => { x.movel.ativa = novo; });
+      return toast(novo ? '⚔️ Móvel ativa na guerra' : '⏸️ Móvel pausada', 'ok'); }
+    case 'movel-abandonar':
       if (await confirmar('Abandonar cidade móvel?', `Limpa coordenada, checklist e exército de ${c.nome}. O slot continua no império para a próxima guerra.`, 'Abandonar', true))
         alterar(c.id, x => { x.coords = ''; x.movel = { ativa: false, checklist: {} }; x.militar = { fora: false, unidades: {} }; x.alarme = false; x.vinho = { estoque: null, consumo: null, em: null }; });
       return;
+    case 'notas': {
+      const txt = await pedirTexto({ titulo: '📝 Notas', sub: c.nome, valor: c.notas || '', multilinha: true, placeholder: 'Ex.: ilha de cristal, vizinho perigoso…' });
+      if (txt == null) return;
+      alterar(c.id, x => { x.notas = txt; });
+      return toast('📝 Notas salvas', 'ok');
     }
-    if (t.closest('[data-editar]')) return formCidade(c);
-    if (t.closest('[data-exercito]')) { focarCidade(c.id); return ir('militar', 'exercito'); }
-    if (t.closest('[data-apagar]')) {
-      if (await confirmar('Apagar cidade?', `${c.nome} sai do app (não do jogo).`, 'Apagar', true)) store.set(st => { st.cidades = st.cidades.filter(x => x.id !== c.id); });
-    }
-  });
+    case 'editar': return formCidade(c);
+    case 'exercito': focarCidade(c.id); return ir('militar', 'exercito');
+    case 'apagar':
+      if (await confirmar('Apagar cidade?', `${c.nome} sai do app (não do jogo).`, 'Apagar', true)) { store.set(st => { st.cidades = st.cidades.filter(x => x.id !== c.id); }); toast('🗑️ Cidade apagada'); }
+      return;
+  }
+}
 
-  raiz.addEventListener('change', e => {
-    const t = e.target, c = cid(t); if (!c) return;
-    if (t.matches('[data-alarme]')) alterar(c.id, x => { x.alarme = t.checked; });
-    else if (t.matches('[name=residencia]')) alterar(c.id, x => { x.residencia = t.value === '' ? null : Math.max(0, +t.value); });
-    else if (t.matches('[data-movel]')) alterar(c.id, x => { x.movel.checklist[t.dataset.movel] = t.checked; });
-    else if (t.matches('[name=notas]')) alterar(c.id, x => { x.notas = t.value; });
+function checklistMovel(c) {
+  const desenhar = () => {
+    const cc = store.cidade(c.id);
+    return CHECKLIST_MOVEL.map(it => { const ok = cc.movel?.checklist?.[it.id]; return `<div class="mn-item ${ok ? 'feito' : ''}" data-it="${it.id}"><span class="st">${ok ? '✓' : ''}</span><span class="meio"><b>${esc(it.texto)}</b></span></div>`; }).join('');
+  };
+  const f = modal({ titulo: '🧭 Implantação da móvel', sub: c.nome, html: `<div class="mn-vidro md-lista" data-l>${desenhar()}</div><div class="fl-botoes"><button class="btn ouro" data-fechar>Pronto</button></div>` });
+  f.corpo.addEventListener('click', e => {
+    const it = e.target.closest('[data-it]'); if (!it) return;
+    store.set(st => { const x = st.cidades.find(y => y.id === c.id); x.movel.checklist[it.dataset.it] = !x.movel.checklist[it.dataset.it]; });
+    f.corpo.querySelector('[data-l]').innerHTML = desenhar();
   });
 }

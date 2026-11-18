@@ -30,6 +30,7 @@ export function novaCidade(dados = {}) {
     id: novoId(), nome: '', coords: '', papel: '', capital: false,
     vinho: { estoque: null, consumo: null, em: null },
     alarme: false, residencia: null,
+    habitantes: { atual: null, max: null, satisfacao: null, em: null },
     militar: { fora: false, unidades: {} },
     movel: { ativa: false, checklist: {} },
     barbaros: { nivel: 1, vitorias: 0, muralha: false },
@@ -53,6 +54,7 @@ function normalizar(s) {
   out.cidades = (out.cidades || []).map(c => {
     const n = novaCidade(c);
     n.vinho = { estoque: null, consumo: null, em: null, ...(c.vinho || {}) };
+    n.habitantes = { atual: null, max: null, satisfacao: null, em: null, ...(c.habitantes || {}) };
     n.militar = { fora: false, unidades: {}, ...(c.militar || {}) };
     n.movel = { ativa: false, checklist: {}, ...(c.movel || {}) };
     n.barbaros = { nivel: 1, vitorias: 0, muralha: false, ...(c.barbaros || {}) };

@@ -38,3 +38,14 @@ ok(lr.unidades.arietevapor === 25 && lr.unidades.ariete === 12 && lr.unidades.gi
 ok(lr.muralha === 18 && lr.coords === '93:24', 'muralha e coords');
 const tab = "Hoplita\tGigante a Vapor\tCarabineiro\n3.976\t150\t1.250";
 console.log('tabela:', JSON.stringify(p.lerUnidades(tab)));
+// habitantes
+const ag = Date.now();
+let h = c.habitantesAgora({ atual: 1000, max: 2000, satisfacao: 196, em: ag }, ag);
+ok(Math.abs(h.cresceH - 3.92) < 1e-9 && h.estado === 'trava' && h.equilibrio === 1196, 'satisfação 196 -> 3,92/h, trava em 1196');
+h = c.habitantesAgora({ atual: 1000, max: 1100, satisfacao: 300, em: ag - 50 * 3.6e6 }, ag);
+ok(h.atual === 1100 && h.estado === 'cheia', 'enche até a Prefeitura -> ' + h.atual);
+h = c.habitantesAgora({ atual: 1000, max: 1100, satisfacao: 300, em: ag }, ag);
+ok(h.estado === 'crescendo' && Math.abs((h.cheiaEm - ag) / 3.6e6 - (-50 * Math.log(1 - 100 / 300))) < 1e-6, 'tempo para encher');
+h = c.habitantesAgora({ atual: 1000, max: 1500, satisfacao: -40, em: ag - 50 * 3.6e6 }, ag);
+ok(h.atual < 1000 && h.estado === 'caindo' && h.humor.id === 'triste', 'satisfação negativa derruba -> ' + h.atual);
+ok(c.humor(300).id === 'euforica' && c.humor(50).id === 'feliz' && c.humor(0).id === 'neutra' && c.humor(-51).id === 'furiosa', 'faixas de humor');

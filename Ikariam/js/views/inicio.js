@@ -1,6 +1,6 @@
 // INÍCIO — briefing do comandante: checklist pré-sono, alarmes e atalhos
 import * as T from '../timers.js';
-import { vinhoAgora, corrupcao, resumoExercito } from '../calc.js';
+import { vinhoAgora, corrupcao, resumoExercito, habitantesAgora } from '../calc.js';
 import { PRESETS_GUERRA } from '../data.js';
 import { esc, fmt, fmtDur, fmtPct, fmtQuando } from '../ui.js';
 import { timerHtml, ligarTimers, novoTimerFolha } from './comum.js';
@@ -21,6 +21,12 @@ export function checklist(s, agora = Date.now()) {
   itens.push(menos24.length
     ? { st: 'ruim', t: `${menos24.length} cidade(s) com menos de 24h de vinho`, d: menos24.map(x => `${x.c.nome} (${fmtDur(x.v.segRest, true)})`).join(' · '), ir: 'imperio' }
     : { st: 'ok', t: 'Vinho garantido por 24h em todas as tavernas', d: semDado.length ? `${semDado.length} cidade(s) sem dados de vinho` : 'Pode dormir tranquilo 🍇', ir: 'imperio' });
+  const hab = cs.map(c => ({ c, h: habitantesAgora(c.habitantes, agora) })).filter(x => x.h?.sat != null);
+  const caindo = hab.filter(x => x.h.estado === 'caindo');
+  const travadas = hab.filter(x => x.h.estado === 'trava' || x.h.estado === 'parada');
+  if (caindo.length) itens.push({ st: 'ruim', t: `${caindo.length} cidade(s) perdendo habitantes`, d: caindo.map(x => `${x.c.nome} ${x.h.humor.icone} ${x.h.sat}`).join(' · ') + ' · sirva mais vinho', ir: 'imperio' });
+  else if (travadas.length) itens.push({ st: 'aviso', t: `${travadas.length} cidade(s) com crescimento travado`, d: travadas.map(x => `${x.c.nome} para em ${fmt(x.h.equilibrio)}`).join(' · '), ir: 'imperio' });
+  else if (hab.length) itens.push({ st: 'ok', t: 'População crescendo ou lotada', d: `${hab.filter(x => x.h.estado === 'cheia').length} de ${hab.length} Prefeitura(s) lotada(s)`, ir: 'imperio' });
   const semAlarme = cs.filter(c => !c.alarme);
   itens.push(semAlarme.length
     ? { st: 'aviso', t: `${semAlarme.length} porto(s) sem Barco Alarme`, d: semAlarme.map(c => c.nome).slice(0, 6).join(' · ') + (semAlarme.length > 6 ? '…' : ''), ir: 'imperio' }

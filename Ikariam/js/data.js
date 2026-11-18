@@ -103,6 +103,16 @@ export const CHECKLIST_MOVEL = [
   { id: 'exercito', texto: 'Exército transferido de uma vez' },
 ];
 
+// Satisfação na Prefeitura (Wiki Ikariam): crescimento por hora = satisfação × 0,02.
+// Cada habitante novo tira 1 de satisfação, então o crescimento vai freando.
+export const HUMOR = [
+  { min: 300, id: 'euforica', nome: 'Eufórica', icone: '🤩', cor: 'verde', dica: 'Cresce 6+ por hora' },
+  { min: 50, id: 'feliz', nome: 'Feliz', icone: '😊', cor: 'verde', dica: 'Cresce 1 a 6 por hora' },
+  { min: 0, id: 'neutra', nome: 'Neutra', icone: '😐', cor: 'ok', dica: 'Cresce devagar (menos de 1 por hora)' },
+  { min: -50, id: 'triste', nome: 'Insatisfeita', icone: '😟', cor: 'amarelo', dica: 'A população está caindo' },
+  { min: -Infinity, id: 'furiosa', nome: 'Revoltada', icone: '😡', cor: 'vermelho', dica: 'Greve na Prefeitura: caindo rápido' },
+];
+
 export const RECURSOS = [
   { id: 'madeira', nome: 'Madeira', icone: '🪵' },
   { id: 'vinho', nome: 'Vinho', icone: '🍇' },
@@ -186,4 +196,4 @@ export const REGRAS_COMBATE = [
   { icone: '🍲', titulo: 'Sem cozinheiro = dispersão', texto: 'Moral zerada faz o exército dispersar e voltar à cidade em 60 min.' },
 ];
 
-export const VERSAO_APP = '2.0.0';
+export const VERSAO_APP = '2.1.0';
