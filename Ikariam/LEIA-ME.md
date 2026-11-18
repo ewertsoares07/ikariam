@@ -13,8 +13,7 @@ App de apoio para Ikariam, feito para o celular. Funciona sem internet e não te
 
 ## Colocar no ar (Netlify)
 
-1. Entre em app.netlify.com › **Add new site › Deploy manually** e arraste a pasta `v2`.
-   (Ou ligue o repositório e use `v2` como *Base directory*. Não precisa de comando de build.)
+1. O Netlify está ligado ao repositório no GitHub, com `Ikariam` como *Base directory*. Não precisa de comando de build.
 2. Anote o endereço (ex.: `comando-imperial.netlify.app`).
 3. Abra o endereço no celular. No Chrome, menu ⋮ › **Instalar app**. No iPhone, **Compartilhar › Adicionar à Tela de Início**.
 

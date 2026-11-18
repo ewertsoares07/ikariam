@@ -1,4 +1,4 @@
-# Netlify: publique esta pasta (v2) como está, sem build.
+# Netlify: Base directory = Ikariam. Publica esta pasta como está, sem build.
 [build]
   publish = "."
 
