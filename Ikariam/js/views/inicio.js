@@ -72,11 +72,8 @@ export function render(raiz, ctx) {
   <div class="card destaque">
     <div class="card-topo"><span class="ic-q">🚀</span><h3>Comece em 2 minutos</h3></div>
     <p class="dica">Cadastre as cidades uma vez. Depois o app só pede o vinho quando você abastecer: nada de atualizar recurso toda hora.</p>
-    <div class="grade2">
-      <button class="btn ouro" data-ir="imperio">🏘️ Cadastrar cidades</button>
-      <button class="btn" data-ir="sistema/backup">📥 Trazer da v1</button>
-    </div>
-    ${!cloud.estado.usuario ? '<button class="btn egeu bloco" style="margin-top:10px" data-ir="sistema/conta">☁️ Entrar com Google (backup e aliança)</button>' : ''}
+    <button class="btn ouro bloco" data-ir="imperio">🏘️ Cadastrar cidades</button>
+    ${!cloud.estado.usuario ? '<button class="btn egeu bloco" style="margin-top:10px" data-ir="sistema/conta">☁️ Entrar com Google (nuvem e aliança)</button>' : ''}
   </div>` : `
   <div class="card">
     <div class="card-topo"><span class="ic-q">🌙</span><h3>Checklist pré-sono</h3><div class="dir"><span class="chip ${okCount === lista.length ? 'verde' : 'amarelo'}">${okCount}/${lista.length} ok</span></div></div>
@@ -107,7 +104,7 @@ export function render(raiz, ctx) {
   </div>
 
   ${app.podeInstalar() && !app.instalado() ? `<div class="card destaque"><div class="flex"><span class="ic-q">📲</span><div class="cresce"><b>Instale no celular</b><div class="mut pequeno">Abre como app, em tela cheia e sem internet.</div></div><button class="btn ouro mini" data-instalar>Instalar</button></div></div>` : ''}
-  ${!cloud.estado.usuario && s.cidades.length ? `<div class="card"><div class="flex"><span class="ic-q">🤝</span><div class="cresce"><b>Traga sua aliança</b><div class="mut pequeno">Entre com Google para ter backup automático, operações sincronizadas e alvos compartilhados.</div></div><button class="btn egeu mini" data-ir="sistema/conta">Entrar</button></div></div>` : ''}
+  ${!cloud.estado.usuario && s.cidades.length ? `<div class="card"><div class="flex"><span class="ic-q">🤝</span><div class="cresce"><b>Traga sua aliança</b><div class="mut pequeno">Entre com Google para salvar na nuvem, operações sincronizadas e alvos compartilhados.</div></div><button class="btn egeu mini" data-ir="sistema/conta">Entrar</button></div></div>` : ''}
   <p class="rodape-app">Comando Imperial 2.0 · feito para não te prender no jogo</p>`;
 
   ligarTimers(raiz);

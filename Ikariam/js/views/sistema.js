@@ -1,18 +1,18 @@
-// SISTEMA — conta e nuvem, backup, ajustes e sobre
+// SISTEMA — conta e nuvem, ajustes e sobre
 import * as store from '../store.js';
 import * as T from '../timers.js';
 import { PAPEIS_USUARIO } from '../config.js';
 import { VERSAO_APP } from '../data.js';
-import { esc, fmt, fmtDesde, toast, confirmar, copiar, baixar, folha, campoNum } from '../ui.js';
+import { esc, fmtDesde, toast, confirmar, campoNum } from '../ui.js';
 
-const ABAS = [['conta', '☁️ Conta'], ['backup', '💾 Backup'], ['config', '🎛️ Ajustes'], ['sobre', 'ℹ️ Sobre']];
+const ABAS = [['conta', '☁️ Conta'], ['config', '🎛️ Ajustes'], ['sobre', 'ℹ️ Sobre']];
 
 export function render(raiz, ctx) {
   const sub = ABAS.some(a => a[0] === ctx.sub) ? ctx.sub : 'conta';
-  raiz.innerHTML = `<div class="tela-titulo"><div><h2>Sistema</h2><p>Conta, backup e ajustes</p></div></div>
+  raiz.innerHTML = `<div class="tela-titulo"><div><h2>Sistema</h2><p>Conta, nuvem e ajustes</p></div></div>
     <div class="seg">${ABAS.map(([id, n]) => `<button class="${id === sub ? 'ativo' : ''}" data-aba="${id}">${n}</button>`).join('')}</div><div data-c></div>`;
   raiz.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (b) ctx.ir('sistema', b.dataset.aba); });
-  ({ conta, backup, config, sobre })[sub](raiz.querySelector('[data-c]'), ctx);
+  ({ conta, config, sobre })[sub](raiz.querySelector('[data-c]'), ctx);
 }
 
 function cardInstalar(ctx) {
@@ -46,7 +46,7 @@ function conta(raiz, ctx) {
   </div>` : `<div class="card destaque">
     <h3><span class="ic-q">☁️</span>Entre com o Google</h3>
     <ul class="pequeno" style="margin:0 0 12px;padding-left:18px;color:var(--txt2)">
-      <li>Backup automático: trocou de celular, está tudo lá.</li>
+      <li>Tudo salvo na nuvem: trocou de celular, está lá.</li>
       <li>Celular e PC sincronizados na hora.</li>
       <li>Aliança: operações com hora de partida de cada um, alvos e mural.</li>
     </ul>
@@ -61,60 +61,6 @@ function conta(raiz, ctx) {
     if (ev.target.closest('[data-sync]')) return cloud.sincronizarAgora().catch(er => toast(cloud.traduzir(er), 'erro'));
     if (ev.target.closest('[data-membros]')) return ctx.ir('alianca', 'membros');
     if (ev.target.closest('[data-instalar]')) return ctx.app.instalar();
-  });
-}
-
-function backup(raiz, ctx) {
-  const { s } = ctx;
-  raiz.innerHTML = `
-  <div class="card"><h3><span class="ic-q">💾</span>Cópia de segurança</h3>
-    <p class="dica">${s.cidades.length} cidades · ${s.alvos.length} alvos · ${s.timers.length} cronômetros. Com login no Google isso já vai para a nuvem sozinho.</p>
-    <div class="grade2"><button class="btn ouro" data-exportar>⬇️ Baixar .json</button><label class="btn" style="position:relative">⬆️ Importar arquivo<input type="file" accept=".json,application/json" data-arquivo style="position:absolute;inset:0;opacity:0"></label></div>
-    <div class="grade2" style="margin-top:8px"><button class="btn" data-codigo>📋 Copiar código</button><button class="btn" data-colar>📥 Colar código</button></div>
-    <p class="pequeno mut" style="margin:8px 2px 0">O código é um texto que você cola no WhatsApp ou no bloco de notas e depois cola de volta aqui.</p>
-  </div>
-  <div class="card"><h3><span class="ic-q">📦</span>Trazer da v1</h3>
-    <p class="dica">Na v1, vá em <b>Notas › Exportar dados (JSON)</b> e importe o arquivo aqui em "Importar arquivo". Vêm as cidades, os exércitos, os alvos, as notas e os cronômetros que ainda não terminaram.</p>
-    ${ctx.cloud.papel() === 'admin' ? '<button class="btn egeu bloco" data-legado>☁️ Puxar direto da nuvem da v1</button>' : ''}
-  </div>
-  <div class="card"><h3><span class="ic-q">🧨</span>Começar do zero</h3>
-    <p class="dica">Apaga tudo deste aparelho. Se estiver logado, a nuvem recebe a versão vazia.</p>
-    <button class="btn perigo bloco" data-zerar>Apagar tudo</button>
-  </div>`;
-  const importar = obj => {
-    try { const tipo = store.importarQualquer(obj); toast(tipo === 'v1' ? '📦 Dados da v1 importados!' : '✔ Backup restaurado', 'ok'); }
-    catch (e) { toast('Não reconheci esse backup: ' + e.message, 'erro'); }
-  };
-  raiz.addEventListener('click', async e => {
-    if (e.target.closest('[data-exportar]')) return baixar(`ikariam-imperial-${new Date().toISOString().slice(0, 10)}.json`, store.exportarJSON());
-    if (e.target.closest('[data-legado]')) {
-      try { const doc = await ctx.cloud.lerLegadoV1(); if (await confirmar('Importar da v1?', 'As cidades, exércitos e alvos da v1 vão substituir os deste aparelho.', 'Importar', true)) importar(doc); }
-      catch (er) { toast(ctx.cloud.traduzir(er), 'erro'); }
-      return;
-    }
-    if (e.target.closest('[data-codigo]')) { const c = await store.gerarCodigo(); return copiar(c); }
-    if (e.target.closest('[data-colar]')) {
-      const f = folha({ titulo: 'Colar código de backup', html: '<textarea class="entrada" rows="6" data-txt placeholder="IKV2Z.…"></textarea><div class="fl-botoes"><button class="btn" data-fechar>Cancelar</button><button class="btn ouro" data-ok>Restaurar</button></div>' });
-      f.corpo.querySelector('[data-ok]').onclick = async () => {
-        try { const obj = await store.lerCodigo(f.corpo.querySelector('[data-txt]').value); if (await confirmar('Substituir dados?', 'O que está neste aparelho será trocado pelo backup.', 'Substituir', true)) { importar(obj); f.fechar(); } }
-        catch (er) { toast('Código inválido', 'erro'); }
-      };
-      return;
-    }
-    if (e.target.closest('[data-zerar]') && await confirmar('Apagar tudo?', 'Cidades, alvos, cronômetros e ajustes deste aparelho. Não dá para desfazer (a não ser com backup).', 'Apagar tudo', true)) {
-      const cfg = store.get().config;
-      store.substituir({ ...store.estadoVazio(), config: cfg }, 'local');
-      store.set(() => {});
-      toast('Tudo apagado');
-    }
-  });
-  raiz.querySelector('[data-arquivo]').addEventListener('change', async e => {
-    const arq = e.target.files[0]; if (!arq) return;
-    try {
-      const obj = JSON.parse(await arq.text());
-      if (await confirmar('Substituir dados?', `Importar "${arq.name}" troca o que está neste aparelho.`, 'Importar', true)) importar(obj);
-    } catch { toast('Arquivo inválido', 'erro'); }
-    e.target.value = '';
   });
 }
 
@@ -142,13 +88,23 @@ function config(raiz, ctx) {
   <div class="card"><h3><span class="ic-q">🎨</span>Aparência</h3>
     <div class="seg" style="margin:0"><button class="${c.tema !== 'papiro' ? 'ativo' : ''}" data-tema="escuro">🌙 Egeu noturno</button><button class="${c.tema === 'papiro' ? 'ativo' : ''}" data-tema="papiro">📜 Papiro</button></div>
     <div style="margin-top:10px">${sw('mostrarRaras', c.mostrarRaras, 'Mostrar unidades pouco usadas', 'Lanceiro, Arqueiro, Fundibulário, Catapulta, Barco Balista')}</div>
+  </div>
+  <div class="card"><h3><span class="ic-q">🧨</span>Começar do zero</h3>
+    <p class="dica">Apaga cidades, alvos e cronômetros. Se estiver logado, a nuvem também fica vazia.</p>
+    <button class="btn perigo bloco" data-zerar>Apagar tudo</button>
   </div>`;
   raiz.addEventListener('change', e => {
     const t = e.target; if (!t.name || !(t.name in c)) return;
     const val = t.type === 'checkbox' ? t.checked : t.type === 'number' ? (t.value === '' ? 0 : +t.value) : t.value;
     store.set(s => { s.config[t.name] = val; });
   });
-  raiz.addEventListener('click', e => {
+  raiz.addEventListener('click', async e => {
+    if (e.target.closest('[data-zerar]') && await confirmar('Apagar tudo?', 'Cidades, alvos e cronômetros deste aparelho e da nuvem. Não dá para desfazer.', 'Apagar tudo', true)) {
+      const cfg = store.get().config;
+      store.substituir({ ...store.estadoVazio(), config: cfg }, 'local');
+      store.set(() => {});
+      return toast('Tudo apagado');
+    }
     const tm = e.target.closest('[data-tema]'); if (tm) store.set(s => { s.config.tema = tm.dataset.tema; });
     if (e.target.closest('[data-testar]')) { T.tocarCorneta(); T.falar('Alarme de teste, comandante.'); navigator.vibrate?.([300, 100, 300]); }
   });

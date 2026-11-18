@@ -116,7 +116,6 @@ function itensMenu() {
     it('Aliança', 'membros', '👥', 'Membros', 'Aprovar e cargos', ['alianca', 'membros'], { pode: () => papel === 'admin', badge: cloud.estado.pendentes || 0 }),
     it('Aliança', 'entrarAli', '🤝', 'Aliança', 'Entrar com Google', ['sistema', 'conta'], { pode: () => !membro }),
     it('Sistema', 'conta', '☁️', 'Conta e nuvem', cloud.estado.usuario ? 'Conectado' : 'Entrar com Google', ['sistema', 'conta']),
-    it('Sistema', 'backup', '💾', 'Backup', 'Exportar e importar', ['sistema', 'backup'], { tags: 'whatsapp codigo json v1' }),
     it('Sistema', 'config', '🎛️', 'Ajustes', 'Barcos, sons e tema', ['sistema', 'config'], { tags: 'tema capacidade som' }),
   ];
 }

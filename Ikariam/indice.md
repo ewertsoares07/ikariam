@@ -16,7 +16,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Menu em folha do botão do meio | `js/menu.js`, `css/menu.css` |
 | Folha que sobe de baixo (genérica) | `js/folha.js` |
 | Alarme, som, voz, notificação, agenda | `js/timers.js` |
-| Dados salvos, backup, importação da v1 | `js/store.js` |
+| Dados salvos no aparelho (estado) | `js/store.js` |
 | Login, sincronização, aliança | `js/cloud.js`, `js/config.js`, `firestore.rules` |
 | Rotas, barra de baixo, instalar, tema | `js/app.js` |
 | Casca da página, título | `index.html` |
@@ -36,7 +36,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | `pve.js` | Vila dos Bárbaros por ilha, Emboscada Abissal | store, timers, data |
 | `guias.js` | Oficina (Horizontes Infinitos), regras de combate | data |
 | `alianca.js` | Operações, alvos compartilhados, mural, membros | store, timers, cloud, config |
-| `sistema.js` | Conta e nuvem, backup, ajustes, sobre | store, timers, cloud, config |
+| `sistema.js` | Conta e nuvem, ajustes (inclui apagar tudo), sobre | store, timers, cloud, config |
 | `comum.js` | Pedaços usados em várias telas (timer, seletor de cidade, grade de unidades, colar) | store, timers, ui |
 
 Cada tela exporta `render`. As rotas são `#/tela/sub` e ficam em `js/app.js`.
@@ -45,17 +45,15 @@ Cada tela exporta `render`. As rotas são `#/tela/sub` e ficam em `js/app.js`.
 
 - `data.js`: todas as regras do jogo (`UNIDADES`, `LINHAS`, `RECURSOS`, `PIRATARIA`, `MILAGRES`, `OFICINA`, `PRESETS_GUERRA`, `LC_PRESETS`, `VERSAO_APP`…).
 - `calc.js`: funções puras, sem tela (`distancia`, `tempoViagem`, `vinhoAgora`, `corrupcao`, `saque`, `resumoExercito`, `flancoNaval`…).
-- `store.js`: estado único no `localStorage` (`get`, `set`, `on`, `cidade`, backup `gerarCodigo`/`lerCodigo`, `importarQualquer`).
+- `store.js`: estado único no `localStorage` (`get`, `set`, `on`, `cidade`, `substituir`). Sem backup nem importação: a cópia de segurança é só o Firebase.
 - `ui.js`: formatação (`fmt`, `fmtDur`, `fmtHora`…), `toast`, `confirmar`, `copiar`, `baixar`, campos.
 - `cloud.js`: Firebase; o SDK só é baixado quando a pessoa entra.
 - `config.js`: config do Firebase, `EMAIL_DONO`, papéis da aliança.
 
 ## Nomes que não podem mudar
 
-Mudar estes nomes apaga o que já está salvo nos aparelhos ou invalida backups:
+Mudar estes nomes apaga o que já está salvo nos aparelhos:
 - chave `ikariam_v2_state` e `ikariam_v2_logado`;
-- prefixos de backup `IKV2.` e `IKV2Z.`;
-- `app: 'ikariam-v2'` no JSON exportado.
 
 ## Toda vez que mudar um arquivo do app
 

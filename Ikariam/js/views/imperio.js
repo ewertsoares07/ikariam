@@ -174,9 +174,8 @@ export function render(raiz, ctx) {
     <button class="chip" data-ordem>${ordem === 'vinho' ? '⏳ por vinho' : '📌 minha ordem'}</button>
   </div>
   ${cs.map(({ c, v }) => `<div class="cid ${abertas.has(c.id) ? 'aberta' : ''}" id="cid-${c.id}">${cabecalho(c, v)}${corpo(c, v, s)}</div>`).join('') || '<div class="vazio">Nenhuma cidade neste filtro.</div>'}
-  ` : `<div class="card"><div class="vazio"><span class="grande">🏘️</span>Nenhuma cidade ainda.<br>Adicione uma por uma, várias de uma vez, ou traga o backup da v1.</div>
-    <div class="grade2"><button class="btn ouro" data-nova>＋ Cidade</button><button class="btn" data-varias>☰ Várias</button></div>
-    <button class="btn fantasma bloco" style="margin-top:8px" data-v1>📥 Importar backup da v1</button></div>`}`;
+  ` : `<div class="card"><div class="vazio"><span class="grande">🏘️</span>Nenhuma cidade ainda.<br>Adicione uma por uma ou várias de uma vez.</div>
+    <div class="grade2"><button class="btn ouro" data-nova>＋ Cidade</button><button class="btn" data-varias>☰ Várias</button></div></div>`}`;
 
   const cid = el => store.get().cidades.find(c => c.id === el.closest('[data-cidade]')?.dataset.cidade);
   const alterar = (id, fn) => store.set(st => { const c = st.cidades.find(x => x.id === id); if (c) fn(c, st); });
@@ -187,7 +186,6 @@ export function render(raiz, ctx) {
     if (ab) { const id = ab.dataset.abrir; abertas.has(id) ? abertas.delete(id) : abertas.add(id); document.getElementById('cid-' + id)?.classList.toggle('aberta'); return; }
     if (t.closest('[data-nova]')) return formCidade();
     if (t.closest('[data-varias]')) return formVarias();
-    if (t.closest('[data-v1]')) return ir('sistema', 'backup');
     const fl = t.closest('[data-filtro]'); if (fl) { filtro = fl.dataset.filtro; return ctx.atualizar(); }
     if (t.closest('[data-ordem]')) { ordem = ordem === 'vinho' ? 'minha' : 'vinho'; return ctx.atualizar(); }
     const c = cid(t); if (!c) return;

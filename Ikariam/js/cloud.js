@@ -104,7 +104,7 @@ function resolverConflito(nuvem) {
       titulo: 'Qual versão manter?', sub: 'O aparelho e a nuvem mudaram separados',
       html: `<p class="fl-texto">📱 Este aparelho: alterado ${esc(fmtQuando(local.atualizadoEm))}<br>☁️ Nuvem: alterada ${esc(fmtQuando(nuvem.atualizadoEm))}</p>
         <div class="fl-botoes"><button class="btn" data-v="local">📱 Manter este</button><button class="btn ouro" data-v="nuvem">☁️ Usar a nuvem</button></div>
-        <p class="pequeno mut" style="margin-top:10px">A versão que você não escolher é substituída. Se ficar em dúvida, faça um backup antes em Sistema › Backup.</p>`,
+        <p class="pequeno mut" style="margin-top:10px">A versão que você não escolher é substituída.</p>`,
       aoFechar: async () => {
         if (escolha === 'nuvem') aplicarNuvem(nuvem);
         else if (escolha === 'local') await enviar(true);
@@ -230,13 +230,6 @@ export const cloud = {
   sincronizarAgora: async () => { await sincronizar(); toast('☁️ Sincronizado', 'ok'); },
   aoVoltarOnline() { estado.online = true; if (estado.usuario) sincronizar().catch(() => {}); avisar(); },
   lista: (col, ordem) => assinar(col, ordem),
-  // Lê o save antigo da v1 (imperial_saves/dados_imperiais) para migrar
-  async lerLegadoV1() {
-    const { db, F } = await sdk();
-    const snap = await F.getDoc(F.doc(db, 'imperial_saves', 'dados_imperiais'));
-    if (!snap.exists()) throw new Error('Não achei o save da v1 na nuvem');
-    return snap.data();
-  },
   info: col => assinaturas[col] || { lista: [], carregado: false },
   salvar: salvarDoc,
   apagar: apagarDoc,
