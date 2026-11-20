@@ -1,25 +1,28 @@
-// MILITAR — exército por cidade, viagem, waving/LC tank, pré-batalha e flancos
+// MILITAR — exército por cidade, simulador de combate, viagem, waving/LC tank e flancos
 import * as store from '../store.js';
 import * as T from '../timers.js';
-import { UNIDADES, LINHAS, LC_PRESETS, POSEIDON_BONUS, VEL_MERCANTE } from '../data.js';
-import { resumoExercito, somarExercitos, distancia, tempoViagem, velocidadeGrupo, barcosParaPeso, analisarComposicao, flancoNaval, horaPartida, unidadePorId, generaisUnidade } from '../calc.js';
+import { UNIDADES, LC_PRESETS, POSEIDON_BONUS, VEL_MERCANTE } from '../data.js';
+import { resumoExercito, somarExercitos, distancia, tempoViagem, velocidadeGrupo, barcosParaPeso, flancoNaval, horaPartida, unidadePorId, generaisUnidade } from '../calc.js';
 import { lerUnidades } from '../parser.js';
 import { esc, fmt, fmtDur, fmtHora, fmtQuando, toast, copiar, confirmar, campoNum, campoCoords, paraDatetimeLocal, folha, pedirNumero } from '../ui.js';
-import { gradeUnidades, gradeUnidadesInfo, lerGradeUnidades, colarFolha, alertasHtml, seletorCidade } from './comum.js';
+import { gradeUnidades, gradeUnidadesInfo, lerGradeUnidades, colarFolha, seletorCidade } from './comum.js';
+import { render as simulador } from './simulador.js';
+import { icone } from '../icones.js';
 
-const ABAS = [['exercito', '🛡️ Exército'], ['viagem', '🧭 Viagem'], ['waving', '🌊 Waving'], ['prebatalha', '⚖️ Pré-batalha'], ['flancos', '⛵ Flancos']];
+const ABAS = [['exercito', 'elmo', 'Exército'], ['simulador', 'espadas', 'Simulador'], ['viagem', 'rota', 'Viagem'], ['waving', 'ondas', 'Waving'], ['flancos', 'trirreme', 'Flancos']];
 let cidadeSel = null;
 let visao = 'cidade';
 export const focarCidade = id => { cidadeSel = id; visao = 'cidade'; };
 
 export function render(raiz, ctx) {
-  const sub = ABAS.some(a => a[0] === ctx.sub) ? ctx.sub : 'exercito';
+  const pedido = ctx.sub === 'prebatalha' ? 'simulador' : ctx.sub; // atalho antigo do menu
+  const sub = ABAS.some(a => a[0] === pedido) ? pedido : 'exercito';
   raiz.innerHTML = `<div class="tela-titulo"><div><h2>Militar</h2><p>Tropas, viagens e táticas de guerra</p></div></div>
-    <div class="seg">${ABAS.map(([id, n]) => `<button class="${id === sub ? 'ativo' : ''}" data-aba="${id}">${n}</button>`).join('')}</div>
+    <div class="seg">${ABAS.map(([id, ic, n]) => `<button class="${id === sub ? 'ativo' : ''}" data-aba="${id}">${icone(ic, { tam: 16 })} ${n}</button>`).join('')}</div>
     <div data-conteudo></div>`;
   raiz.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (b) ctx.ir('militar', b.dataset.aba); });
   const alvo = raiz.querySelector('[data-conteudo]');
-  ({ exercito, viagem, waving, prebatalha, flancos })[sub](alvo, ctx);
+  ({ exercito, viagem, waving, simulador, flancos })[sub](alvo, ctx);
 }
 
 // ---------------- EXÉRCITO ----------------
@@ -245,40 +248,6 @@ function waving(raiz, ctx) {
       const n = Math.min(12, Math.max(1, +mem.ondas || 1)), iv = Math.max(1, +mem.intervalo || 15);
       for (let i = 1; i <= n; i++) T.novoTimer({ nome: `Leva ${i}/${n}${nomeAlvo()}`, icone: '🌊', seg: (i - 1) * iv * 60 + 5, tipo: 'onda' });
     }
-  });
-}
-
-// ---------------- PRÉ-BATALHA ----------------
-function prebatalha(raiz, ctx) {
-  const m = (ctx.mem.pre ||= { tipo: 'mar', unidades: {}, muralha: '', inimigoLanchas: false, inimigoFoguetes: false, alianca: false });
-  const alertas = analisarComposicao(m.tipo, m.unidades, { muralha: +m.muralha || 0, inimigoLanchas: m.inimigoLanchas, inimigoFoguetes: m.inimigoFoguetes, alianca: m.alianca });
-  const r = resumoExercito(Object.fromEntries(Object.entries(m.unidades).filter(([id]) => unidadePorId(id)?.tipo === m.tipo)), true);
-  const presentes = new Set(Object.entries(m.unidades).filter(([, q]) => q > 0).map(([id]) => unidadePorId(id)?.linha));
-  raiz.innerHTML = `
-  <div class="seg"><button class="${m.tipo === 'mar' ? 'ativo' : ''}" data-tipo="mar">⚓ Naval</button><button class="${m.tipo === 'terra' ? 'ativo' : ''}" data-tipo="terra">🗡️ Terrestre</button></div>
-  <div class="card">
-    <div class="card-topo"><span class="ic-q">⚖️</span><h3>Composição enviada</h3><div class="dir">${seletorCidade('puxar', '', 'class="entrada" style="max-width:150px;padding:6px 8px;font-size:.78rem"', 'Puxar de…')}</div></div>
-    ${gradeUnidades(m.unidades, m.tipo, true)}
-    <div class="grade2" style="margin-top:10px">
-      ${m.tipo === 'terra' ? `<label class="campo"><span>Muralha do alvo</span>${campoNum('muralha', m.muralha, 'min="0" max="60" placeholder="0"')}</label>` : `<label class="marcar"><input type="checkbox" name="inimigoLanchas" ${m.inimigoLanchas ? 'checked' : ''}> Inimigo tem Lanchas</label><label class="marcar"><input type="checkbox" name="inimigoFoguetes" ${m.inimigoFoguetes ? 'checked' : ''}> Inimigo tem LF</label>`}
-      <label class="marcar"><input type="checkbox" name="alianca" ${m.alianca ? 'checked' : ''}> Batalha em aliança</label>
-    </div>
-  </div>
-  <div class="card destaque"><h3><span class="ic-q">📣</span>Leitura do estrategista</h3>${alertasHtml(alertas)}
-    <div class="grade3" style="margin-top:8px"><div class="kpi"><span>Generais</span><b>${fmt(r.generais, 1)}</b></div><div class="kpi amarelo"><span>Ouro/h (2×)</span><b>${fmt(r.manutReal)}</b></div><div class="kpi"><span>${m.tipo === 'terra' ? 'Barcos' : 'Navios'}</span><b>${fmt(m.tipo === 'terra' ? barcosParaPeso(r.peso, ctx.s.config.capMercante) : r.navios)}</b></div></div>
-  </div>
-  <div class="card"><h3><span class="ic-q">🎯</span>Quem ataca quem</h3>
-    ${LINHAS[m.tipo].map(l => `<div class="check ${presentes.has(l.id) ? 'ok' : ''}"><span class="st">${l.icone}</span><div><b>${esc(l.nome)}</b><small>${esc(l.alvo)}</small></div></div>`).join('')}
-    <p class="pequeno mut" style="margin:6px 2px 0">Isto não é o simulador de dano exato: ele avisa recuo automático, falta de cerco e erros de composição antes de você mandar.</p>
-  </div>`;
-  raiz.addEventListener('click', e => { const b = e.target.closest('[data-tipo]'); if (b) { m.tipo = b.dataset.tipo; ctx.atualizar(); } });
-  raiz.addEventListener('change', e => {
-    const t = e.target;
-    if (t.name === 'puxar' && t.value) { m.unidades = { ...store.cidade(t.value).militar.unidades }; return ctx.atualizar(); }
-    if (t.matches('[data-uni]')) m.unidades = { ...Object.fromEntries(Object.entries(m.unidades).filter(([id]) => unidadePorId(id)?.tipo !== m.tipo)), ...lerGradeUnidades(raiz) };
-    else if (t.type === 'checkbox') m[t.name] = t.checked;
-    else if (t.name) m[t.name] = t.value;
-    ctx.atualizar();
   });
 }
 

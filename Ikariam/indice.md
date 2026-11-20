@@ -11,6 +11,8 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Valor ou regra do jogo (velocidade, custo, carga, milagres, bônus) | `js/data.js` |
 | Conta/fórmula (viagem, vinho, corrupção, saque, exército) | `js/calc.js` (+ `testes/teste_calc.mjs`) |
 | Leitura de relatório colado do jogo | `js/parser.js` |
+| Simulador de combate: regras da rodada, mira, reserva, recuo/impasse | `js/combate.js` (+ `testes/teste_combate.mjs`) |
+| Vida/armadura/dano/espaço das unidades e tamanho do campo | `js/data.js` → `COMBATE`, `CAMPO`, `ALVOS` |
 | Texto, botão ou layout de uma tela | `js/views/<tela>.js` |
 | Cor, espaçamento, base visual | `css/app.css` |
 | Tema Clássico Grego (mármore, bronze, vinho, meandro, fontes) | `css/grego.css` (carrega depois de app/menu) |
@@ -34,7 +36,8 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 |---|---|---|
 | `inicio.js` | Início: briefing, checklist pré-sono, alarmes, atalhos | timers, calc, data |
 | `imperio.js` | Cidades em sanfona só de leitura (abre uma por vez): habitantes/satisfação, vinho, segurança; editar = modal | store, timers, data, calc |
-| `militar.js` (maior: ~300 linhas) | Exército por cidade, viagem, waving/LC tank, pré-batalha, flancos | store, timers, data, calc |
+| `militar.js` (maior: ~300 linhas) | Exército por cidade, viagem, waving/LC tank, flancos; a aba Simulador chama `simulador.js` | store, timers, data, calc |
+| `simulador.js` | Tabuleiro de combate (naval/terrestre): espaços tocáveis, popover numérico, presets LC, rodada animada, faixas de recuo/impasse/aliança | combate, data, calc, icones |
 | `alvos.js` | Caderno de espionagem, leitor de relatório, saque | store, data, calc, parser |
 | `cronometros.js` | Alarmes, pirataria, recarga de milagres | store, timers, data |
 | `pve.js` | Vila dos Bárbaros por ilha, Emboscada Abissal | store, timers, data |
@@ -66,7 +69,7 @@ Mudar estes nomes apaga o que já está salvo nos aparelhos:
 
 1. Suba a `VERSAO` no topo do `sw.js` (ex.: `imperial-2.0.0` → `imperial-2.0.1`). Se não subir, o celular continua com a versão velha.
 2. Arquivo novo? Coloque também na lista `ARQUIVOS` do `sw.js`.
-3. Mexeu em `calc.js` ou `parser.js`? Rode `node testes/teste_calc.mjs`.
+3. Mexeu em `calc.js` ou `parser.js`? Rode `node testes/teste_calc.mjs`. Mexeu em `combate.js` ou em `COMBATE`? Rode `node testes/teste_combate.mjs`.
 4. Mudou o que um arquivo faz ou criou um arquivo? Atualize este índice.
 
 Documentação mais longa: `LEIA-ME.md` (deploy, Firebase, dados a conferir). Regras e metagame do jogo: `docs/Dossiê Ikariam (Metagame & Regras).md`. Só abra se o pedido precisar.

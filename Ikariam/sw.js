@@ -2,13 +2,13 @@
 // SERVICE WORKER — deixa o app abrir sem internet.
 // Ao mudar qualquer arquivo, suba a VERSAO para o celular baixar a nova.
 // =====================================================================
-const VERSAO = 'imperial-2.2.0';
+const VERSAO = 'imperial-2.2.1';
 const ARQUIVOS = [
   './', './index.html', './manifest.webmanifest',
   './css/app.css', './css/menu.css', './css/grego.css', './css/tatico.css',
   './js/app.js', './js/config.js', './js/data.js', './js/calc.js', './js/store.js', './js/parser.js', './js/ui.js',
-  './js/folha.js', './js/modal.js', './js/menu.js', './js/timers.js', './js/cloud.js', './js/icones.js',
-  './js/views/comum.js', './js/views/inicio.js', './js/views/imperio.js', './js/views/militar.js', './js/views/alvos.js',
+  './js/folha.js', './js/modal.js', './js/menu.js', './js/timers.js', './js/cloud.js', './js/icones.js', './js/combate.js',
+  './js/views/comum.js', './js/views/inicio.js', './js/views/imperio.js', './js/views/militar.js', './js/views/simulador.js', './js/views/alvos.js',
   './js/views/cronometros.js', './js/views/pve.js', './js/views/guias.js', './js/views/alianca.js', './js/views/sistema.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
   './img/hero.svg',
