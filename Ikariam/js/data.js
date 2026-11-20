@@ -242,4 +242,4 @@ export const COMBATE = {
 // Rota marítima: de onde a frota pode sair (papel da cidade → ícone)
 export const ORIGENS_ROTA = { capital: 'louros', ancora: 'ancora', movel: 'tenda' };
 
-export const VERSAO_APP = '2.2.0';
+export const VERSAO_APP = '2.2.4';
