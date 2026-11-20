@@ -2,9 +2,10 @@
 import * as store from '../store.js';
 import * as T from '../timers.js';
 import { PAPEIS, CHECKLIST_MOVEL } from '../data.js';
-import { vinhoAgora, reposicaoVinho, corrupcao, nivelSemCorrupcao, lerCoords, habitantesAgora, humor } from '../calc.js';
+import { vinhoAgora, reposicaoVinho, corrupcao, nivelSemCorrupcao, lerCoords, habitantesAgora, humor, resumoExercito } from '../calc.js';
 import { esc, fmt, fmtK, fmtPct, fmtQuando, folha, modal, toast, confirmar, campoCoords, pedirNumero, pedirTexto, pedirCampos } from '../ui.js';
 import { focarCidade } from './militar.js';
+import { icone } from '../icones.js';
 
 let aberta = null;
 let filtro = 'todas';
@@ -33,21 +34,40 @@ function estadoHab(h) {
   }
 }
 
-function cabecalho(c, v, h) {
+const TACA_REF = 7 * 86400; // taça cheia = 7 dias de vinho
+const iconePapel = c => (c.capital ? 'louros' : papel(c.papel)?.svg || 'templo');
+const tropasFora = c => c.militar?.fora && Object.values(c.militar.unidades || {}).some(n => n > 0);
+
+// Taça de vinho animada: o timers.js baixa o líquido a cada segundo (data-taca)
+export const tacaHtml = (v, cls = '') => {
+  const nivel = Math.min(1, v.segRest / TACA_REF);
+  return `<span class="taca ${cls} nv-${v.nivel}" data-taca data-zera="${v.zeraEm}" data-ref="${TACA_REF}" data-nv="${v.nivel}" style="--nivel:${nivel.toFixed(4)}" aria-hidden="true">
+    <span class="taca-bojo"><i class="liq"></i></span><span class="taca-haste"></span></span>`;
+};
+
+function tagsFuncao(c) {
+  const tags = [];
+  if (c.capital && c.papel !== 'capital') tags.push(PAPEIS[0]);
   const p = papel(c.papel);
+  if (p) tags.push(p);
+  return tags.map(t => `<span class="tag-funcao tf-${t.id}">${icone(t.svg, { tam: 13 })}${esc(t.nome)}</span>`).join('');
+}
+
+function cabecalho(c, v, h) {
   const hm = h?.humor;
-  return `<button class="cid-topo" data-abrir="${c.id}" aria-expanded="${aberta === c.id}">
-    <span class="ic">${c.capital ? '👑' : p ? p.icone : '🏛️'}</span>
-    <span class="meio"><b>${esc(c.nome || 'Sem nome')}</b><small>${c.coords ? `[${esc(c.coords)}]` : 'sem coordenada'} · ${esc(p ? p.nome : c.capital ? 'Capital' : 'sem papel')}${c.papel === 'movel' && c.movel?.ativa ? ' · 🟢 em guerra' : ''}</small>
-      <span class="selos">
-        ${h ? `<span class="selo ${h.estado === 'cheia' ? 'verde' : ''}">👥 ${fmtK(h.atual)}${h.max ? `/${fmtK(h.max)}` : ''}</span>` : ''}
-        ${hm ? `<span class="selo ${hm.cor}">${hm.icone} ${sinal(h.sat)}</span>` : ''}
-        ${c.alarme ? '' : '<span class="selo amarelo">🔕 sem alarme</span>'}
-      </span></span>
-    <span class="fim" style="text-align:right">
-      ${v ? `<span class="flex" style="justify-content:flex-end;gap:6px"><span class="semaforo ${corNivel[v.nivel]}"></span><span class="contagem pequeno" data-fim="${v.zeraEm}" data-curto data-zero="SECOU">…</span></span>` : '<span class="mut pequeno">🍇 —</span>'}
-    </span>
-    <span class="seta">›</span></button>`;
+  return `<div class="cid-topo">
+    <button class="cid-abrir" data-abrir="${c.id}" aria-expanded="${aberta === c.id}">
+      <span class="ic">${icone(iconePapel(c), { tam: 24 })}</span>
+      <span class="meio"><b>${esc(c.nome || 'Sem nome')}</b><small>${c.coords ? `[${esc(c.coords)}]` : 'sem coordenada'}${c.papel === 'movel' && c.movel?.ativa ? ' · <span class="ouro">no front</span>' : ''}${tropasFora(c) ? ' · tropas fora 2×' : ''}</small>
+        <span class="selos">${tagsFuncao(c)}
+          ${h ? `<span class="selo ${h.estado === 'cheia' ? 'verde' : ''}">👥 ${fmtK(h.atual)}${h.max ? `/${fmtK(h.max)}` : ''}</span>` : ''}
+          ${hm ? `<span class="selo ${hm.cor}">${hm.icone} ${sinal(h.sat)}</span>` : ''}
+        </span></span>
+      <span class="cid-vinho">${v ? `${tacaHtml(v, 'mini')}<span class="contagem" data-fim="${v.zeraEm}" data-curto data-zero="SECOU">…</span>` : `<span class="taca mini vazia" aria-hidden="true"><span class="taca-bojo"></span><span class="taca-haste"></span></span><span class="mut pequeno">—</span>`}</span>
+      <span class="seta">›</span></button>
+    <button class="alarme-tg ${c.alarme ? 'on' : 'off'}" data-alarme-tg="${c.id}" aria-pressed="${!!c.alarme}" aria-label="${c.alarme ? 'Barco alarme no porto: tocar para tirar' : 'Sem barco alarme: tocar para marcar'}"
+      title="${c.alarme ? 'Barco alarme no porto' : 'Sem barco alarme'}">${icone('escudoAlerta', { tam: 22 })}</button>
+  </div>`;
 }
 
 const dado = (acao, rotulo, valor, sub = '', cls = '') =>
@@ -81,16 +101,24 @@ function corpo(c, v, h, s) {
         ${eh.fim ? '<button class="icone-btn" data-a="alarme-hab" aria-label="Avisar quando lotar">⏰</button>' : ''}</div>` : ''}
     </div>
 
-    <div class="painel">
-      <div class="painel-t">🍇 Vinho e taverna <i class="info-i" data-balao-t="Vinho" data-balao="${esc(BALAO_VINHO)}">i</i>
+    <div class="painel painel-vinho">
+      <div class="painel-t">${icone('taca', { tam: 16 })} Vinho e taverna <i class="info-i" data-balao-t="Vinho" data-balao="${esc(BALAO_VINHO)}">i</i>
         ${v ? `<span class="dir"><span class="chip ${corNivel[v.nivel]}">${textoCurto[v.nivel]}</span></span>` : ''}</div>
+      ${v ? `<div class="vinho-monitor">
+        ${tacaHtml(v, 'grande')}
+        <div class="vinho-info">
+          <small>Seca em</small><span class="contagem" data-fim="${v.zeraEm}" data-zero="SECOU">…</span>
+          <span class="barra-vinho nv-${v.nivel}" data-taca data-zera="${v.zeraEm}" data-ref="${TACA_REF}" data-nv="${v.nivel}" style="--nivel:${Math.min(1, v.segRest / TACA_REF).toFixed(4)}"><i></i></span>
+          <small>Zera ${esc(fmtQuando(v.zeraEm))} · barra cheia = 7 dias</small>
+        </div></div>` : ''}
       <div class="dados d2">
         ${dado('vinho-estoque', 'No armazém', estoqueBruto != null ? fmt(estoqueBruto) : null, c.vinho?.em ? `atualizado ${fmtQuando(c.vinho.em)}` : '')}
         ${dado('vinho-consumo', 'Consumo / hora', c.vinho?.consumo ? fmt(c.vinho.consumo) : null, c.vinho?.consumo ? `${fmt(c.vinho.consumo * 24)} por dia` : '')}
       </div>
-      ${v ? `<div class="contador-v"><div><small>Seca em</small><span class="contagem" data-fim="${v.zeraEm}" data-zero="SECOU">…</span></div><div style="text-align:right"><small>Zera</small><b class="pequeno">${esc(fmtQuando(v.zeraEm))}</b></div></div>
-      <div class="acoes-c"><button class="btn ouro" data-a="abastecer">🚢 Abastecer</button><button class="btn" data-a="alarme-vinho">⏰ Alarme 3h antes</button></div>
-      <p class="pequeno mut" style="margin:8px 2px 0">Para 7 dias: ${fmt(reposicaoVinho(c.vinho.consumo, 7, v.restante, cap).precisa)} · barco = ${fmt(cap)}</p>`
+      ${v ? `<div class="md-rotulo" style="margin:12px 2px 6px">Repor até</div>
+      <div class="repor">${[7, 14, 30].map(d => { const r = reposicaoVinho(c.vinho.consumo, d, v.restante, cap); return `<button class="repor-btn ${r.precisa ? '' : 'feito'}" data-a="repor-${d}" aria-label="Repor vinho para ${d} dias: ${r.barcos} barcos">
+          <span class="repor-d">${d}d</span><span class="repor-b">${icone('mercante', { tam: 22 })}<b>${r.precisa ? fmt(r.barcos) : '✓'}</b></span><small>${r.precisa ? `${fmtK(r.precisa)} vinho` : 'já tem'}</small></button>`; }).join('')}</div>
+      <div class="acoes-c"><button class="btn vinho" data-a="abastecer">${icone('anfora', { tam: 18 })} Abastecer</button><button class="btn" data-a="alarme-vinho">⏰ Alarme 3h antes</button></div>`
       : '<p class="pequeno mut" style="margin:8px 2px 0">Toque nos quadros para pôr o estoque e o consumo: o app conta sozinho até a próxima vez.</p>'}
     </div>
 
@@ -105,10 +133,10 @@ function corpo(c, v, h, s) {
         <i class="info-i" data-balao-t="Corrupção" data-balao="${esc(BALAO_CORR)}">i</i></div>
     </div>
 
-    ${c.papel === 'movel' ? `<div class="painel">
-      <div class="painel-t">🧭 Cidade móvel <span class="dir"><span class="chip ${checks === CHECKLIST_MOVEL.length ? 'verde' : 'amarelo'}">${checks}/${CHECKLIST_MOVEL.length} prontos</span></span></div>
-      <div class="check-mini">${CHECKLIST_MOVEL.map(it => `<span class="selo ${c.movel?.checklist?.[it.id] ? 'verde' : ''}">${c.movel?.checklist?.[it.id] ? '✓' : '○'} ${esc(it.texto.split(' (')[0])}</span>`).join('')}</div>
-      <div class="acoes-c"><button class="btn" data-a="movel-check">☑️ Checklist</button><button class="btn ${c.movel?.ativa ? '' : 'ouro'}" data-a="movel-ativa">${c.movel?.ativa ? '⏸️ Pausar' : '⚔️ Ativar'}</button><button class="btn perigo" data-a="movel-abandonar">🏳️</button></div>
+    ${c.papel === 'movel' ? `<div class="painel painel-movel ${c.movel?.ativa ? 'ativa' : ''}">
+      <div class="painel-t">${icone('tenda', { tam: 16 })} Cidade Móvel <span class="dir"><span class="chip ${checks === CHECKLIST_MOVEL.length ? 'verde' : 'amarelo'}">${checks}/${CHECKLIST_MOVEL.length} prontos</span></span></div>
+      <div class="movel-passos">${CHECKLIST_MOVEL.map(it => { const ok = !!c.movel?.checklist?.[it.id]; return `<button class="passo ${ok ? 'feito' : ''}" data-a="movel-item-${it.id}" aria-pressed="${ok}">${icone(it.icone, { tam: 22 })}<small>${esc(it.texto.split(' (')[0])}</small></button>`; }).join('')}</div>
+      <div class="acoes-c"><button class="btn ${c.movel?.ativa ? 'egeu' : 'ouro'}" data-a="movel-front">${icone('espadas', { tam: 18 })} ${c.movel?.ativa ? 'No front · checklist' : 'Ativar no Front'}</button><button class="btn perigo" data-a="movel-abandonar">${icone('bandeira', { tam: 18 })} Abandonar</button></div>
     </div>` : ''}
 
     <div class="painel">
@@ -201,8 +229,15 @@ export function render(raiz, ctx) {
   const popMax = comHab.reduce((a, x) => a + (x.h.max || 0), 0);
   const tristes = cs.filter(x => x.h?.sat != null && x.h.sat < 0);
   const piorHumor = [...cs.filter(x => x.h?.sat != null)].sort((a, b) => a.h.sat - b.h.sat)[0];
+  const v24 = cs.filter(x => x.v && x.v.segRest < 86400);
+  const semAlarme = s.cidades.filter(c => !c.alarme);
+  const fora = s.cidades.filter(tropasFora);
+  const ouroExtra = fora.reduce((a, c) => a + resumoExercito(c.militar.unidades).manut1x, 0);
+  const presonoOk = [!v24.length, !semAlarme.length, !fora.length].filter(Boolean).length;
   if (filtro === 'urgente') cs = cs.filter(x => x.v && (x.v.nivel === 'vermelho' || x.v.nivel === 'amarelo'));
   if (filtro === 'alarme') cs = cs.filter(x => !x.c.alarme);
+  if (filtro === 'vinho24') cs = cs.filter(x => x.v && x.v.segRest < 86400);
+  if (filtro === 'fora') cs = cs.filter(x => tropasFora(x.c));
   if (filtro === 'humor') cs = cs.filter(x => x.h?.sat != null && (x.h.sat < 0 || x.h.estado === 'trava' || x.h.estado === 'parada'));
   if (ordem === 'vinho') cs.sort((a, b) => (a.v ? a.v.segRest : 1e12) - (b.v ? b.v.segRest : 1e12));
   if (aberta && !s.cidades.some(c => c.id === aberta)) aberta = null;
@@ -211,6 +246,14 @@ export function render(raiz, ctx) {
   <div class="tela-titulo"><div><h2>Império</h2><p>${total} cidade${total === 1 ? '' : 's'} · toque numa cidade para ver tudo</p></div>
     <div class="acoes"><button class="btn mini" data-varias>☰ Várias</button><button class="btn ouro mini" data-nova>＋ Cidade</button></div></div>
   ${total ? `
+  <div class="presono ${presonoOk === 3 ? 'tudo-ok' : ''}">
+    <div class="presono-t">${icone('ampulheta', { tam: 16 })}<b>Checklist pré-sono</b><span class="chip ${presonoOk === 3 ? 'verde' : 'amarelo'}">${presonoOk}/3 ok</span></div>
+    <div class="pilulas">
+      <button class="pilula ${v24.length ? 'ruim' : 'ok'} ${filtro === 'vinho24' ? 'ativa' : ''}" data-filtro="vinho24" aria-pressed="${filtro === 'vinho24'}">${icone('taca', { tam: 22 })}<b>${v24.length}</b><small>${v24.length === 1 ? 'cidade' : 'cidades'} &lt; 24h de vinho</small></button>
+      <button class="pilula ${semAlarme.length ? 'aviso' : 'ok'} ${filtro === 'alarme' ? 'ativa' : ''}" data-filtro="alarme" aria-pressed="${filtro === 'alarme'}">${icone('escudoAlerta', { tam: 22 })}<b>${semAlarme.length}</b><small>${semAlarme.length === 1 ? 'porto' : 'portos'} sem Barco Alarme</small></button>
+      <button class="pilula ${fora.length ? 'aviso' : 'ok'} ${filtro === 'fora' ? 'ativa' : ''}" data-filtro="fora" aria-pressed="${filtro === 'fora'}">${icone('ouro', { tam: 22 })}<b>${fora.length}</b><small>${fora.length ? `tropas fora · +${fmtK(ouroExtra)} ouro/h` : 'tropas fora pagando 2×'}</small></button>
+    </div>
+  </div>
   <div class="grade2" style="margin-bottom:12px">
     <div class="kpi ${pior ? corNivel[pior.v.nivel] === 'ok' ? '' : corNivel[pior.v.nivel] : ''}" data-balao-t="Menor vinho" data-balao="${esc(pior ? `${pior.c.nome} é a próxima taverna a secar.` : 'Ponha o vinho e o consumo de cada cidade para o app contar.')}"><span>Menor vinho</span><b>${pior ? `<em data-fim="${pior.v.zeraEm}" data-curto>…</em>` : '—'}</b><span>${pior ? esc(pior.c.nome) : 'sem dados'}</span></div>
     <div class="kpi ${comHab.length ? 'ouro' : ''}" data-balao-t="População do império" data-balao="${esc(comHab.length ? `${fmt(popTotal)} habitantes em ${comHab.length} cidade(s)${popMax ? `, de ${fmt(popMax)} moradias (${Math.round(popTotal / popMax * 100)}% ocupado)` : ''}.` : 'Abra uma cidade e toque em 🏛️ Prefeitura para pôr os habitantes.')}"><span>Habitantes</span><b>${comHab.length ? fmtK(popTotal) : '—'}</b><span>${popMax ? `de ${fmtK(popMax)} · ${Math.round(popTotal / popMax * 100)}%` : 'sem dados'}</span></div>
@@ -221,11 +264,11 @@ export function render(raiz, ctx) {
   </div>
   <div class="flex quebra" style="margin-bottom:10px">
     <div class="linha-chips cresce">
-      ${[['todas', 'Todas'], ['urgente', '🍇 Urgentes'], ['humor', '😟 Satisfação'], ['alarme', '🔕 Sem alarme']].map(([id, n]) => `<button class="chip ${filtro === id ? 'ativo' : ''}" data-filtro="${id}">${n}</button>`).join('')}
+      ${[['todas', 'Todas'], ['urgente', '🍇 Urgentes'], ['humor', '😟 Satisfação']].map(([id, n]) => `<button class="chip ${filtro === id ? 'ativo' : ''}" data-filtro="${id}">${n}</button>`).join('')}
     </div>
     <button class="chip" data-ordem>${ordem === 'vinho' ? '⏳ por vinho' : '📌 minha ordem'}</button>
   </div>
-  ${cs.map(({ c, v, h }) => `<div class="cid ${aberta === c.id ? 'aberta' : ''}" id="cid-${c.id}">${cabecalho(c, v, h)}${corpo(c, v, h, s)}</div>`).join('') || '<div class="vazio">Nenhuma cidade neste filtro.</div>'}
+  ${cs.map(({ c, v, h }) => `<div class="cid ${aberta === c.id ? 'aberta' : ''} ${c.papel === 'movel' ? 'cid-movel' : c.papel === 'ancora' ? 'cid-ancora' : ''} ${c.capital ? 'cid-capital' : ''} ${c.movel?.ativa && c.papel === 'movel' ? 'no-front' : ''}" id="cid-${c.id}">${cabecalho(c, v, h)}${corpo(c, v, h, s)}</div>`).join('') || `<div class="vazio">Nenhuma cidade neste filtro.${filtro !== 'todas' ? '<br><button class="btn mini" data-filtro="todas" style="margin-top:8px">Ver todas</button>' : ''}</div>`}
   ` : `<div class="card"><div class="vazio"><span class="grande">🏘️</span>Nenhuma cidade ainda.<br>Adicione uma por uma ou várias de uma vez.</div>
     <div class="grade2"><button class="btn ouro" data-nova>＋ Cidade</button><button class="btn" data-varias>☰ Várias</button></div></div>`}`;
 
@@ -242,7 +285,13 @@ export function render(raiz, ctx) {
       if (n != null) store.set(st => { st.config.capMercante = n; });
       return;
     }
-    const fl = t.closest('[data-filtro]'); if (fl) { filtro = fl.dataset.filtro; return ctx.atualizar(); }
+    const fl = t.closest('[data-filtro]'); if (fl) { filtro = fl.classList.contains('pilula') && filtro === fl.dataset.filtro ? 'todas' : fl.dataset.filtro; return ctx.atualizar(); }
+    const tg = t.closest('[data-alarme-tg]');
+    if (tg) {
+      const c = store.cidade(tg.dataset.alarmeTg); if (!c) return;
+      tg.classList.add('trocando');
+      return acao('alarme', c, { alterar, ir, s: store.get() });
+    }
     if (t.closest('[data-ordem]')) { ordem = ordem === 'vinho' ? 'minha' : 'vinho'; return ctx.atualizar(); }
     const btn = t.closest('[data-a]');
     const id = t.closest('[data-cidade]')?.dataset.cidade;
@@ -277,6 +326,12 @@ async function acao(a, c, { alterar, ir, s }) {
   // guarda os habitantes projetados como novo ponto de partida
   const baseHab = () => ({ atual: h ? h.atual : c.habitantes.atual, max: c.habitantes.max, satisfacao: h ? h.sat : c.habitantes.satisfacao, em: agora });
 
+  if (a.startsWith('repor-')) return abastecer(c, v, s, alterar, +a.slice(6));
+  if (a.startsWith('movel-item-')) {
+    const it = a.slice(11), novo = !c.movel?.checklist?.[it];
+    alterar(c.id, x => { x.movel.checklist[it] = novo; if (it === 'alarme') x.alarme = novo; });
+    return toast(`${novo ? '✓' : '○'} ${CHECKLIST_MOVEL.find(x => x.id === it)?.texto.split(' (')[0]}`, novo ? 'ok' : '');
+  }
   switch (a) {
     case 'prefeitura': {
       const r = await pedirCampos({
@@ -327,15 +382,7 @@ async function acao(a, c, { alterar, ir, s }) {
       alterar(c.id, x => { x.vinho = { estoque: v ? Math.floor(v.restante) : x.vinho.estoque, consumo: n || null, em: Date.now() }; });
       return toast('🍷 Consumo salvo', 'ok');
     }
-    case 'abastecer': {
-      const cap = s.config.capMercante || 500;
-      const atalhos = [3, 7, 14, 30].map(d => { const r = reposicaoVinho(c.vinho.consumo, d, v.restante, cap); return { rotulo: `${d} dias`, valor: r.precisa, sub: `${fmt(r.barcos)} barco${r.barcos === 1 ? '' : 's'}` }; }).filter(x => x.valor > 0);
-      const n = await pedirNumero({ titulo: '🚢 Abastecer vinho', sub: c.nome, rotulo: 'Quanto vinho chegou', min: 0, somar: true, base: Math.floor(v.restante), atalhos, passos: [cap, cap * 5, cap * 10], botao: 'Abasteci', sufixo: 'vinho',
-        dica: atalhos.length ? 'Toque num prazo para preencher o que falta até lá.' : '' });
-      if (!n) return;
-      alterar(c.id, x => { const w = vinhoAgora(x.vinho); x.vinho = { ...x.vinho, estoque: Math.floor((w ? w.restante : 0) + n), em: Date.now() }; });
-      return toast(`🍇 +${fmt(n)} em ${c.nome}`, 'ok');
-    }
+    case 'abastecer': return abastecer(c, v, s, alterar);
     case 'alarme-vinho': {
       const fim = v.zeraEm - 3 * 3600e3;
       if (fim <= Date.now()) return toast('Faltam menos de 3h: abasteça já!', 'erro');
@@ -343,7 +390,7 @@ async function acao(a, c, { alterar, ir, s }) {
     }
     case 'alarme':
     { const novo = !c.alarme;
-      alterar(c.id, x => { x.alarme = novo; });
+      alterar(c.id, x => { x.alarme = novo; if (x.papel === 'movel') x.movel.checklist.alarme = novo; });
       return toast(novo ? '🔔 Barco alarme no porto' : '🔕 Porto sem barco alarme', novo ? 'ok' : ''); }
     case 'residencia': {
       const nec = nivelSemCorrupcao(total);
@@ -354,6 +401,9 @@ async function acao(a, c, { alterar, ir, s }) {
       return toast(n == null ? 'Nível apagado' : `Nível ${n} · corrupção ${fmtPct(corrupcao(n, total), 1)}`, 'ok');
     }
     case 'movel-check': return checklistMovel(c);
+    case 'movel-front':
+      if (!c.movel?.ativa) { alterar(c.id, x => { x.movel.ativa = true; }); toast('⚔️ Cidade móvel ativa no front', 'ok'); }
+      return checklistMovel(c);
     case 'movel-ativa':
     { const novo = !c.movel?.ativa;
       alterar(c.id, x => { x.movel.ativa = novo; });
@@ -376,15 +426,36 @@ async function acao(a, c, { alterar, ir, s }) {
   }
 }
 
+async function abastecer(c, v, s, alterar, dias = null) {
+  if (!v) return toast('Ponha o estoque e o consumo primeiro', 'erro');
+  const cap = s.config.capMercante || 500;
+  const atalhos = [3, 7, 14, 30].map(d => { const r = reposicaoVinho(c.vinho.consumo, d, v.restante, cap); return { rotulo: `${d} dias`, valor: r.precisa, sub: `${fmt(r.barcos)} barco${r.barcos === 1 ? '' : 's'}` }; }).filter(x => x.valor > 0);
+  const pre = dias ? reposicaoVinho(c.vinho.consumo, dias, v.restante, cap) : null;
+  if (pre && !pre.precisa) return toast(`🍇 ${c.nome} já tem vinho para ${dias} dias`, 'ok');
+  const n = await pedirNumero({
+    titulo: '🚢 Abastecer vinho', sub: pre ? `${c.nome} · repor até ${dias} dias` : c.nome, rotulo: 'Quanto vinho chegou', min: 0, somar: true, base: Math.floor(v.restante),
+    valor: pre ? pre.precisa : null, atalhos, passos: [cap, cap * 5, cap * 10], botao: 'Abasteci', sufixo: 'vinho',
+    dica: pre ? `Mande <b>${fmt(pre.barcos)} barco${pre.barcos === 1 ? '' : 's'} mercante${pre.barcos === 1 ? '' : 's'}</b> (${fmt(cap)} cada) e toque em Abasteci quando chegar.` : atalhos.length ? 'Toque num prazo para preencher o que falta até lá.' : '',
+  });
+  if (!n) return;
+  alterar(c.id, x => { const w = vinhoAgora(x.vinho); x.vinho = { ...x.vinho, estoque: Math.floor((w ? w.restante : 0) + n), em: Date.now() }; });
+  toast(`🍇 +${fmt(n)} em ${c.nome}`, 'ok');
+}
+
+// "Ativar no Front": checklist marcável da cidade móvel (Barco Alarme fica ligado ao do porto)
 function checklistMovel(c) {
   const desenhar = () => {
     const cc = store.cidade(c.id);
-    return CHECKLIST_MOVEL.map(it => { const ok = cc.movel?.checklist?.[it.id]; return `<div class="mn-item ${ok ? 'feito' : ''}" data-it="${it.id}"><span class="st">${ok ? '✓' : ''}</span><span class="meio"><b>${esc(it.texto)}</b></span></div>`; }).join('');
+    const feitos = CHECKLIST_MOVEL.filter(it => cc.movel?.checklist?.[it.id]).length;
+    return `<div class="movel-prog"><span style="width:${Math.round(feitos / CHECKLIST_MOVEL.length * 100)}%"></span></div>
+      <div class="mn-vidro md-lista">${CHECKLIST_MOVEL.map(it => { const ok = cc.movel?.checklist?.[it.id]; return `<div class="mn-item ${ok ? 'feito' : ''}" data-it="${it.id}"><span class="st">${ok ? '✓' : ''}</span><span class="ic">${icone(it.icone, { tam: 22 })}</span><span class="meio"><b>${esc(it.texto)}</b></span></div>`; }).join('')}</div>
+      <div class="fl-botoes">${cc.movel?.ativa ? '<button class="btn" data-pausar>⏸️ Tirar do front</button>' : ''}<button class="btn ouro" data-fechar>${feitos === CHECKLIST_MOVEL.length ? 'Pronta para a guerra ⚔️' : 'Pronto'}</button></div>`;
   };
-  const f = modal({ titulo: '🧭 Implantação da móvel', sub: c.nome, html: `<div class="mn-vidro md-lista" data-l>${desenhar()}</div><div class="fl-botoes"><button class="btn ouro" data-fechar>Pronto</button></div>` });
+  const f = modal({ titulo: '⚔️ Ativar no Front', sub: `${c.nome} · implantação da cidade móvel`, html: `<div data-l>${desenhar()}</div>` });
   f.corpo.addEventListener('click', e => {
+    if (e.target.closest('[data-pausar]')) { store.set(st => { st.cidades.find(y => y.id === c.id).movel.ativa = false; }); toast('⏸️ Móvel fora do front'); f.fechar(); return; }
     const it = e.target.closest('[data-it]'); if (!it) return;
-    store.set(st => { const x = st.cidades.find(y => y.id === c.id); x.movel.checklist[it.dataset.it] = !x.movel.checklist[it.dataset.it]; });
+    store.set(st => { const x = st.cidades.find(y => y.id === c.id); const novo = !x.movel.checklist[it.dataset.it]; x.movel.checklist[it.dataset.it] = novo; if (it.dataset.it === 'alarme') x.alarme = novo; });
     f.corpo.querySelector('[data-l]').innerHTML = desenhar();
   });
 }

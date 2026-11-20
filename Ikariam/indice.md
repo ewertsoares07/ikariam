@@ -21,7 +21,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Menu em folha do botão do meio | `js/menu.js`, `css/menu.css` |
 | Folha que sobe de baixo (genérica) | `js/folha.js` |
 | Modal de edição (número, texto, campos, escolher) e balões de dica | `js/modal.js` (estilo no fim de `css/app.css`) |
-| Alarme, som, voz, notificação, agenda | `js/timers.js` |
+| Alarme, som, voz, notificação, agenda; animação por segundo das taças (`data-taca`) e anéis (`data-anel-fim`) | `js/timers.js` |
 | Dados salvos no aparelho (estado) | `js/store.js` |
 | Login, sincronização, aliança | `js/cloud.js`, `js/config.js`, `firestore.rules` |
 | Rotas, barra de baixo, instalar, tema | `js/app.js` |
@@ -35,7 +35,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Arquivo | Tela | Usa |
 |---|---|---|
 | `inicio.js` | Início: briefing, checklist pré-sono, alarmes, atalhos | timers, calc, data |
-| `imperio.js` | Cidades em sanfona só de leitura (abre uma por vez): habitantes/satisfação, vinho, segurança; editar = modal | store, timers, data, calc |
+| `imperio.js` | Pílulas do checklist pré-sono (filtram), cidades em sanfona (abre uma por vez): tags de função, escudo do Barco Alarme no cabeçalho, taça de vinho líquida (`tacaHtml`), repor 7/14/30d com barcos, card da Cidade Móvel (Ativar no Front / Abandonar) e da Âncora; editar = modal | store, timers, data, calc, icones |
 | `militar.js` (maior: ~300 linhas) | Exército por cidade, viagem, waving/LC tank, flancos; a aba Simulador chama `simulador.js` | store, timers, data, calc |
 | `simulador.js` | Tabuleiro de combate (naval/terrestre): espaços tocáveis, popover numérico, presets LC, rodada animada, faixas de recuo/impasse/aliança | combate, data, calc, icones |
 | `alvos.js` | Caderno de espionagem, leitor de relatório, saque | store, data, calc, parser |

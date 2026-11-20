@@ -2,7 +2,7 @@
 // SERVICE WORKER — deixa o app abrir sem internet.
 // Ao mudar qualquer arquivo, suba a VERSAO para o celular baixar a nova.
 // =====================================================================
-const VERSAO = 'imperial-2.2.1';
+const VERSAO = 'imperial-2.2.2';
 const ARQUIVOS = [
   './', './index.html', './manifest.webmanifest',
   './css/app.css', './css/menu.css', './css/grego.css', './css/tatico.css',

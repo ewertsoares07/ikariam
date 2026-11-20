@@ -125,3 +125,111 @@ body.papiro .tabuleiro.terra { background: linear-gradient(180deg, #ece0c3, #e2d
   background: rgba(0, 0, 0, .22); border: 1px dashed rgba(201, 162, 77, .32); font-size: .74rem; color: #cfc6b4; }
 .slot-ficha b { color: var(--mn-ouro); font-family: var(--fonte-n); }
 .slot-ficha .ico { color: var(--mn-ouro); }
+
+/* ---------------- IMPÉRIO: CHECKLIST PRÉ-SONO (pílulas) ---------------- */
+.presono { margin-bottom: 12px; padding: 10px; border-radius: 18px; border: 1px solid rgba(201, 162, 77, .26);
+  background: linear-gradient(135deg, rgba(139, 30, 63, .2), rgba(24, 29, 36, .92) 70%); box-shadow: var(--sombra); }
+.presono.tudo-ok { background: linear-gradient(135deg, rgba(47, 196, 141, .14), rgba(24, 29, 36, .92) 70%); }
+.presono-t { display: flex; align-items: center; gap: 7px; margin: 0 4px 9px; color: var(--ouro-cl); }
+.presono-t b { font-family: var(--fonte-t); font-size: .8rem; letter-spacing: 1.1px; }
+.presono-t .chip { margin-left: auto; }
+.pilulas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.pilula { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px 8px; border-radius: 16px; border: 1px solid; color: inherit; text-align: center; transition: transform .1s, box-shadow .2s; }
+.pilula:active { transform: scale(.95); }
+.pilula b { font-family: var(--fonte-n); font-size: 1.3rem; line-height: 1.05; }
+.pilula small { font-size: .62rem; font-weight: 700; line-height: 1.15; color: var(--txt2); }
+.pilula.ok { background: rgba(47, 196, 141, .08); border-color: rgba(47, 196, 141, .35); }
+.pilula.ok .ico, .pilula.ok b { color: var(--verde); }
+.pilula.aviso { background: rgba(240, 169, 48, .1); border-color: rgba(240, 169, 48, .45); }
+.pilula.aviso .ico, .pilula.aviso b { color: var(--amarelo); }
+.pilula.ruim { background: rgba(224, 53, 77, .12); border-color: rgba(224, 53, 77, .55); animation: pilula-alerta 2.4s ease-in-out infinite; }
+.pilula.ruim .ico, .pilula.ruim b { color: var(--vermelho); }
+.pilula.ativa { box-shadow: 0 0 0 2px var(--ouro-cl), 0 8px 18px -10px rgba(201, 162, 77, .8); }
+@keyframes pilula-alerta { 50% { box-shadow: 0 0 0 3px rgba(224, 53, 77, .25), 0 0 18px -4px rgba(224, 53, 77, .7); } }
+
+/* ---------------- IMPÉRIO: CABEÇALHO DO CARD ---------------- */
+.cid-topo { padding: 0; gap: 0; }
+.cid-abrir { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 11px 4px 11px 12px; border: 0; background: transparent; color: inherit; text-align: left; }
+.cid-topo .ic .ico { width: 24px; height: 24px; }
+.cid-vinho { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none; min-width: 40px; }
+.cid-vinho .contagem { font-size: .7rem; line-height: 1; }
+.alarme-tg { flex: none; width: 40px; height: 40px; margin: 0 10px 0 2px; border-radius: 13px; display: grid; place-items: center; border: 1px solid; transition: transform .15s, box-shadow .25s, background .25s; }
+.alarme-tg.on { color: var(--verde); border-color: rgba(47, 196, 141, .55); background: rgba(47, 196, 141, .13); box-shadow: 0 0 16px -3px rgba(47, 196, 141, .6); }
+.alarme-tg.off { color: var(--vermelho); border-color: rgba(224, 53, 77, .5); background: rgba(224, 53, 77, .1); }
+.alarme-tg.on .ico .al { fill: var(--verde); fill-opacity: .3; }
+.alarme-tg.off .ico .al { fill: var(--vermelho); fill-opacity: .18; }
+.alarme-tg.trocando { transform: scale(.82) rotate(-8deg); }
+
+.tag-funcao { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; font-size: .64rem; font-weight: 800; white-space: nowrap;
+  border: 1px solid rgba(201, 162, 77, .4); background: rgba(201, 162, 77, .1); color: var(--ouro-cl); }
+.tf-cristal { color: #9fd3f0; border-color: rgba(111, 180, 230, .42); background: rgba(111, 180, 230, .1); }
+.tf-enxofre { color: #f2c94c; border-color: rgba(240, 169, 48, .45); background: rgba(240, 169, 48, .1); }
+.tf-marmore { color: #ece5d6; border-color: rgba(236, 229, 214, .38); background: rgba(236, 229, 214, .08); }
+.tf-ancora { color: #9cc0e0; border-color: rgba(111, 157, 196, .5); background: rgba(111, 157, 196, .12); }
+.tf-movel, .tf-vinho { color: #f2b6c8; border-color: rgba(196, 72, 111, .5); background: rgba(139, 30, 63, .2); }
+.tf-madeira { color: #d4b38a; border-color: rgba(176, 128, 74, .45); background: rgba(176, 128, 74, .12); }
+
+/* Cards especiais */
+.cid.cid-capital { border-color: rgba(201, 162, 77, .4); }
+.cid.cid-ancora { border-color: rgba(111, 157, 196, .45); background: linear-gradient(180deg, rgba(111, 157, 196, .1), var(--bg2) 55%); }
+.cid.cid-ancora .cid-topo .ic { color: #9cc0e0; border-color: rgba(111, 157, 196, .5); }
+.cid.cid-movel { border: 1px dashed rgba(196, 72, 111, .6); background: linear-gradient(180deg, rgba(139, 30, 63, .18), var(--bg2) 55%); }
+.cid.cid-movel .cid-topo .ic { color: #f2b6c8; border-color: rgba(196, 72, 111, .55); background: rgba(139, 30, 63, .2); }
+.cid.cid-movel.no-front { border-style: solid; box-shadow: var(--sombra), 0 0 0 1px rgba(196, 72, 111, .35), 0 0 24px -8px rgba(196, 72, 111, .7); }
+
+/* ---------------- TAÇA DE VINHO (líquido animado) ---------------- */
+.taca { --w: 16px; --h: 14px; --b: 1.5px; position: relative; display: inline-flex; flex-direction: column; align-items: center; width: var(--w); flex: none;
+  --liq: linear-gradient(180deg, #c4486f, #8b1e3f 60%, #5e1029); --liq-cl: #d2577e; }
+.taca-bojo { position: relative; display: block; width: 100%; height: var(--h); overflow: hidden; border: var(--b) solid var(--ouro);
+  border-radius: 2px 2px 50% 50% / 2px 2px 75% 75%; background: rgba(239, 230, 210, .05); }
+.taca-bojo::after { content: ''; position: absolute; top: 14%; left: 16%; width: 14%; height: 46%; border-radius: 50%; background: rgba(255, 255, 255, .2); }
+.taca-bojo .liq { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--nivel, 0) * 94%); background: var(--liq); transition: height 1s linear; }
+.taca-bojo .liq::before { content: ''; position: absolute; left: -50%; width: 200%; top: calc(var(--b) * -2); height: calc(var(--b) * 3);
+  background: radial-gradient(ellipse at 50% 100%, var(--liq-cl) 48%, transparent 52%) 0 0 / calc(var(--w) / 2.5) 100% repeat-x; animation: onda-vinho 2.4s linear infinite; }
+@keyframes onda-vinho { to { transform: translateX(25%); } }
+.taca-haste { display: block; width: var(--b); height: calc(var(--h) * .45); background: var(--ouro); }
+.taca::after { content: ''; display: block; width: 72%; height: var(--b); border-radius: 2px; background: var(--ouro); }
+.taca.mini { --w: 16px; --h: 14px; --b: 1.5px; }
+.taca.grande { --w: 64px; --h: 56px; --b: 2.6px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .5)); }
+.taca.vazia .taca-bojo { border-style: dashed; opacity: .5; }
+.nv-verde { --liq: linear-gradient(180deg, #5fe2b3, #1f9d6f 70%, #13704f); --liq-cl: #6fe6bb; }
+.nv-ok { --liq: linear-gradient(180deg, #c4486f, #8b1e3f 60%, #5e1029); --liq-cl: #d2577e; }
+.nv-amarelo { --liq: linear-gradient(180deg, #ffd27a, #f0a930 60%, #b8760f); --liq-cl: #ffd88a; }
+.nv-vermelho { --liq: linear-gradient(180deg, #ff6f84, #e0354d 60%, #8f1527); --liq-cl: #ff7a8e; }
+.taca.nv-vermelho .taca-bojo { border-color: var(--vermelho); animation: taca-alerta 1.2s ease-in-out infinite; }
+.taca.nv-vermelho .taca-haste, .taca.nv-vermelho::after { background: var(--vermelho); }
+@keyframes taca-alerta { 50% { box-shadow: 0 0 0 3px rgba(224, 53, 77, .25), 0 0 14px rgba(224, 53, 77, .8); } }
+
+.vinho-monitor { display: flex; gap: 16px; align-items: center; padding: 12px 14px; margin-bottom: 10px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(139, 30, 63, .2), rgba(15, 18, 22, .25)); border: 1px solid rgba(196, 72, 111, .32); }
+.vinho-info { flex: 1; min-width: 0; }
+.vinho-info small { display: block; color: var(--mut); font-size: .7rem; font-weight: 700; }
+.vinho-info .contagem { display: block; font-size: 1.55rem; line-height: 1.15; color: var(--ouro-cl); }
+.barra-vinho { display: block; height: 10px; margin: 7px 0 5px; border-radius: 10px; overflow: hidden; background: rgba(0, 0, 0, .38); border: 1px solid var(--linha2); }
+.barra-vinho > i { display: block; height: 100%; width: calc(var(--nivel, 0) * 100%); border-radius: 10px; background: var(--liq); transition: width 1s linear; }
+.barra-vinho.nv-vermelho > i { animation: pulsar 1.2s ease-in-out infinite; }
+
+.repor { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.repor-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px 8px; border-radius: 15px; color: var(--txt);
+  border: 1px solid rgba(201, 162, 77, .32); background: linear-gradient(180deg, rgba(201, 162, 77, .12), rgba(201, 162, 77, .03)); transition: transform .1s; }
+.repor-btn:active { transform: scale(.95); }
+.repor-d { font-family: var(--fonte-t); font-weight: 800; font-size: .76rem; letter-spacing: 1px; color: var(--ouro-cl); }
+.repor-b { display: flex; align-items: center; gap: 5px; }
+.repor-b b { font-family: var(--fonte-n); font-size: 1.2rem; }
+.repor-b .ico { color: var(--ouro-cl); }
+.repor-btn small { font-size: .64rem; color: var(--mut); font-weight: 700; }
+.repor-btn.feito { opacity: .55; }
+
+/* ---------------- CIDADE MÓVEL ---------------- */
+.painel-movel { border-color: rgba(196, 72, 111, .42); background: rgba(139, 30, 63, .1); }
+.painel-movel.ativa { background: linear-gradient(135deg, rgba(139, 30, 63, .22), rgba(201, 162, 77, .06)); }
+.movel-passos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.passo { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 3px 8px; border-radius: 13px; color: var(--mut);
+  border: 1px dashed rgba(239, 230, 210, .18); background: rgba(0, 0, 0, .18); transition: transform .1s, background .2s; }
+.passo:active { transform: scale(.94); }
+.passo small { font-size: .6rem; line-height: 1.15; font-weight: 800; text-align: center; }
+.passo.feito { color: var(--verde); border-style: solid; border-color: rgba(47, 196, 141, .5); background: rgba(47, 196, 141, .1); }
+.passo.feito small { color: var(--txt2); }
+.movel-prog { height: 6px; margin: 0 2px 12px; border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, .1); }
+.movel-prog span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--ouro), var(--verde)); transition: width .4s ease; }
+.md-lista .mn-item .ic .ico { color: var(--mn-ouro); }

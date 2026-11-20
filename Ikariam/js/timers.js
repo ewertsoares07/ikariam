@@ -5,6 +5,7 @@
 // =====================================================================
 import * as store from './store.js';
 import { fmtDur, fmtQuando, esc, vibrar, baixar, toast } from './ui.js';
+import { nivelVinho } from './calc.js';
 
 export function novoTimer({ nome, icone = '⏱️', seg, fim, tipo = 'livre', ref = null }) {
   const agora = Date.now();
@@ -34,6 +35,21 @@ export function tick() {
   document.querySelectorAll('[data-barra-ini]').forEach(el => {
     const ini = +el.dataset.barraIni, fim = +el.dataset.barraFim;
     el.style.width = Math.min(100, Math.max(0, ((agora - ini) / Math.max(1, fim - ini)) * 100)) + '%';
+  });
+  // Taça de vinho: o líquido baixa conforme a contagem (cheia = 7 dias) e muda de cor no semáforo
+  document.querySelectorAll('[data-taca]').forEach(el => {
+    const rest = Math.max(0, (+el.dataset.zera - agora) / 1000);
+    el.style.setProperty('--nivel', Math.min(1, rest / (+el.dataset.ref || 604800)).toFixed(4));
+    const nv = nivelVinho(rest);
+    if (el.dataset.nv !== nv) { el.classList.remove('nv-' + el.dataset.nv); el.classList.add('nv-' + nv); el.dataset.nv = nv; }
+  });
+  // Anéis de cronômetro: o arco esvazia e pulsa nos últimos 5 minutos
+  document.querySelectorAll('[data-anel-fim]').forEach(el => {
+    const ini = +el.dataset.anelIni, fim = +el.dataset.anelFim;
+    const resta = Math.max(0, fim - agora);
+    el.style.setProperty('--resta', Math.min(1, resta / Math.max(1, fim - ini)).toFixed(4));
+    el.classList.toggle('pulsa', resta > 0 && resta <= 5 * 60000);
+    el.classList.toggle('zerou', resta <= 0);
   });
   const s = store.get();
   const antes = (s.config.avisoMin || 0) * 60000;
