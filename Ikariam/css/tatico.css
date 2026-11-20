@@ -233,3 +233,86 @@ body.papiro .tabuleiro.terra { background: linear-gradient(180deg, #ece0c3, #e2d
 .movel-prog { height: 6px; margin: 0 2px 12px; border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, .1); }
 .movel-prog span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--ouro), var(--verde)); transition: width .4s ease; }
 .md-lista .mn-item .ic .ico { color: var(--mn-ouro); }
+
+/* ---------------- ANÉIS DE CRONÔMETRO (Waving / LC Tank) ---------------- */
+.aneis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 560px) { .aneis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.anel-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 6px 10px; border-radius: 18px; color: inherit;
+  border: 1px solid rgba(201, 162, 77, .18); background: linear-gradient(180deg, rgba(239, 230, 210, .04), rgba(0, 0, 0, .12)); transition: transform .1s; }
+.anel-card:active { transform: scale(.96); }
+.anel-card.ativo { border-color: rgba(201, 162, 77, .45); background: radial-gradient(circle at 50% 30%, rgba(201, 162, 77, .14), rgba(0, 0, 0, .1) 70%); }
+.anel-nome { font-family: var(--fonte-t); font-size: .78rem; letter-spacing: 1px; margin-top: 4px; }
+.anel-card small { font-size: .66rem; color: var(--mut); font-weight: 700; }
+.anel { position: relative; display: grid; place-items: center; width: 104px; height: 104px; --resta: 1; }
+.anel > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.anel-fundo { fill: rgba(0, 0, 0, .28); stroke: rgba(201, 162, 77, .14); stroke-width: 8; }
+.anel-marcas { fill: none; stroke: rgba(239, 230, 210, .18); stroke-width: 8; stroke-dasharray: .25 4.75; }
+.anel-arco { fill: none; stroke: var(--ouro-cl); stroke-width: 8; stroke-linecap: round;
+  stroke-dasharray: 100 100; stroke-dashoffset: calc((1 - var(--resta)) * 100); transition: stroke-dashoffset 1s linear, stroke .3s;
+  filter: drop-shadow(0 0 4px rgba(226, 194, 117, .55)); }
+.anel.parado .anel-arco { stroke: rgba(143, 109, 44, .55); filter: none; }
+.anel-meio { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--ouro-cl); }
+.anel-meio b { font-family: var(--fonte-n); font-size: .98rem; color: var(--txt); font-variant-numeric: tabular-nums; }
+.anel.parado .anel-meio b { color: var(--mut); }
+.anel.pulsa { animation: anel-pulsa 1s ease-in-out infinite; }
+.anel.pulsa .anel-arco { stroke: var(--vermelho); filter: drop-shadow(0 0 6px rgba(224, 53, 77, .8)); }
+.anel.pulsa .anel-meio { color: var(--vermelho); }
+.anel.zerou .anel-arco { stroke: var(--vermelho); }
+.anel.zerou .anel-meio b { color: var(--vermelho); }
+@keyframes anel-pulsa { 50% { transform: scale(1.06); } }
+
+/* ---------------- CHAVE PAZ (1×) / GUERRA (2×) ---------------- */
+.chave-guerra { margin-bottom: 10px; }
+.chave { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 4px; border-radius: 18px; color: var(--txt);
+  border: 1px solid rgba(201, 162, 77, .3); background: rgba(0, 0, 0, .32); overflow: hidden; }
+.chave-lado { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center;
+  padding: 9px 12px; text-align: left; color: var(--mut); transition: color .35s; }
+.chave-lado .ico { grid-row: 1 / 3; }
+.chave-lado b { font-family: var(--fonte-t); font-size: .9rem; letter-spacing: 1px; }
+.chave-lado small { font-size: .66rem; font-weight: 700; opacity: .85; }
+.chave-bola { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 14px; transition: transform .45s cubic-bezier(.2, 1.2, .35, 1), background .35s, box-shadow .35s;
+  background: linear-gradient(135deg, rgba(47, 196, 141, .35), rgba(17, 94, 66, .55)); box-shadow: 0 0 0 1px rgba(47, 196, 141, .55), 0 8px 18px -10px rgba(47, 196, 141, .9); }
+.chave-guerra.paz .lado-paz { color: #d6fbea; }
+.chave-guerra.guerra .lado-guerra { color: #ffe1e6; }
+.chave-guerra.guerra .chave-bola { transform: translateX(100%); background: linear-gradient(135deg, rgba(224, 53, 77, .5), rgba(139, 30, 63, .7));
+  box-shadow: 0 0 0 1px rgba(224, 53, 77, .6), 0 8px 18px -10px rgba(224, 53, 77, .9); }
+.chave-guerra.guerra .chave { border-color: rgba(224, 53, 77, .45); }
+.chave-guerra.trocou ~ .grade2 .valor-troca, .chave-guerra.trocou ~ * .valor-troca { animation: valor-troca .6s cubic-bezier(.2, 1.3, .4, 1); }
+@keyframes valor-troca { from { transform: translateY(8px) scale(.9); opacity: 0; } }
+.kpi-manut span .ico { vertical-align: -2px; }
+.tabela td .ic-tab { display: inline-flex; vertical-align: middle; margin-right: 6px; color: var(--ouro-cl); }
+
+/* ---------------- ROTA MARÍTIMA ---------------- */
+.rota-mapa { border-radius: 18px; overflow: hidden; border: 1px solid rgba(111, 157, 196, .3);
+  background: radial-gradient(120% 90% at 50% 0%, rgba(111, 157, 196, .16), transparent 60%), repeating-linear-gradient(170deg, rgba(111, 157, 196, .05) 0 2px, transparent 2px 13px), linear-gradient(180deg, #13212c, #0e1820); }
+body.papiro .rota-mapa { background: linear-gradient(180deg, #dfe9ef, #cfdde6); }
+.rota-svg { display: block; width: 100%; height: auto; }
+.rota-sombra { fill: none; stroke: rgba(0, 0, 0, .45); stroke-width: 6; stroke-linecap: round; }
+.rota-linha { fill: none; stroke: var(--ouro-cl); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 2 7; animation: rota-anda 1.2s linear infinite; }
+@keyframes rota-anda { to { stroke-dashoffset: -18; } }
+.rota-ponto circle { fill: #14181e; stroke: var(--ouro); stroke-width: 2; }
+.rota-ponto { color: var(--ouro-cl); }
+.rota-ponto.destino circle { stroke: var(--vermelho); }
+.rota-ponto.destino { color: #ff8a9a; }
+.rota-barco { color: #f3ead6; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .7)); }
+.rota-rotulos { display: flex; justify-content: space-between; gap: 10px; padding: 0 12px 8px; font-size: .74rem; font-weight: 800; color: var(--txt2); }
+.rota-rotulos span { display: inline-flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rota-rotulos small { color: var(--mut); }
+.rota-rotulos .ico { color: var(--ouro-cl); }
+.rota-rodape { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid rgba(111, 157, 196, .2); background: rgba(0, 0, 0, .25); }
+.rota-tempo-box { flex: 1; min-width: 0; }
+.rota-tempo-box small { display: block; font-size: .68rem; color: var(--mut); font-weight: 700; }
+.rota-tempo { display: block; font-family: var(--fonte-n); font-size: 1.6rem; font-weight: 800; line-height: 1.15; color: var(--ouro-cl); font-variant-numeric: tabular-nums; }
+.rota-tempo.caindo { color: var(--verde); text-shadow: 0 0 14px rgba(47, 196, 141, .6); transition: color 1.6s; }
+.rota-corte { display: inline-block; margin-top: 3px; padding: 2px 8px; border-radius: 999px; font-size: .66rem; font-weight: 800; color: #9cc0e0; background: rgba(111, 157, 196, .15); border: 1px solid rgba(111, 157, 196, .35); }
+.rota-corte.off { color: var(--mut); background: transparent; border-style: dashed; }
+.tridente-btn { position: relative; flex: none; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 9px; border-radius: 16px; color: #9cc0e0;
+  border: 1px solid rgba(111, 157, 196, .45); background: linear-gradient(135deg, rgba(111, 157, 196, .18), rgba(20, 40, 60, .5)); transition: transform .1s; overflow: hidden; }
+.tridente-btn:active { transform: scale(.94); }
+.tridente-btn span { display: flex; flex-direction: column; text-align: left; font-family: var(--fonte-t); font-size: .7rem; letter-spacing: 1px; font-weight: 800; }
+.tridente-btn span b { font-family: var(--fonte-n); letter-spacing: 0; font-size: .74rem; color: var(--txt); }
+.tridente-btn.ligado { color: #bfe0ff; border-color: rgba(140, 195, 245, .7); box-shadow: 0 0 18px -4px rgba(111, 157, 196, .8); }
+.tridente-btn.onda::after { content: ''; position: absolute; left: 22px; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; border: 2px solid rgba(160, 210, 255, .9); animation: onda-tridente .8s ease-out forwards; }
+.tridente-btn.onda .ico { animation: tridente-ergue .6s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes onda-tridente { to { transform: scale(14); opacity: 0; } }
+@keyframes tridente-ergue { 40% { transform: translateY(-5px) rotate(-12deg); } }

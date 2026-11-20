@@ -167,3 +167,4 @@ button.chip.ativo { background: linear-gradient(135deg, #e2c275, #c9a24d 60%, #8
 body.papiro .topo::after, body.papiro .nav-baixo::before { opacity: .55; }
 body.papiro .hero { color: #f6efdf; }
 body.papiro .kpi, body.papiro .painel { background: rgba(143, 109, 44, .05); }
+body.papiro .interruptor i { background: rgba(39, 26, 14, .2); }

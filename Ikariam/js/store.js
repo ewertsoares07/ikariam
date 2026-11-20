@@ -19,7 +19,7 @@ export function estadoVazio() {
     config: {
       capMercante: 500, capCargueiro: 50000, mercantes: 0, cargueiros: 0,
       tema: 'escuro', som: true, voz: true, vibrar: true, avisoMin: 5,
-      mostrarRaras: false, oligarquia: false, milagres: {}, nomeJogador: '', servidor: '',
+      mostrarRaras: false, oligarquia: false, milagres: {}, nomeJogador: '', servidor: '', modoGuerra: false,
     },
     ultimoSync: 0,
   };

@@ -36,7 +36,7 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 |---|---|---|
 | `inicio.js` | Início: briefing, checklist pré-sono, alarmes, atalhos | timers, calc, data |
 | `imperio.js` | Pílulas do checklist pré-sono (filtram), cidades em sanfona (abre uma por vez): tags de função, escudo do Barco Alarme no cabeçalho, taça de vinho líquida (`tacaHtml`), repor 7/14/30d com barcos, card da Cidade Móvel (Ativar no Front / Abandonar) e da Âncora; editar = modal | store, timers, data, calc, icones |
-| `militar.js` (maior: ~300 linhas) | Exército por cidade, viagem, waving/LC tank, flancos; a aba Simulador chama `simulador.js` | store, timers, data, calc |
+| `militar.js` (maior: ~400 linhas) | Exército por cidade com chave Paz (1×) / Guerra (2×) (`config.modoGuerra`), rota marítima visual com Tridente de Poseidon (`rotaHtml`), anéis de cronômetro no Waving (`ANEIS`: munição 45, reagrupamento 60, LC Tank 15/30), flancos; a aba Simulador chama `simulador.js` | store, timers, data, calc, icones |
 | `simulador.js` | Tabuleiro de combate (naval/terrestre): espaços tocáveis, popover numérico, presets LC, rodada animada, faixas de recuo/impasse/aliança | combate, data, calc, icones |
 | `alvos.js` | Caderno de espionagem, leitor de relatório, saque | store, data, calc, parser |
 | `cronometros.js` | Alarmes, pirataria, recarga de milagres | store, timers, data |

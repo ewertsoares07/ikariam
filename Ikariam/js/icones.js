@@ -137,3 +137,8 @@ export function icone(nome, { tam = 24, cls = '', titulo = '', traco = 2.6 } = {
 }
 
 export const iconeUnidade = (id, o) => icone(POR_UNIDADE[id] || (temIcone(id) ? id : 'espadas'), o);
+
+// Ícone dentro de outro SVG (ex.: barquinho andando na rota): <svg> aninhado já posicionado
+export function iconeEm(nome, x, y, tam, cls = '') {
+  return `<svg class="ico ${cls}" x="${x}" y="${y}" width="${tam}" height="${tam}" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nome] || ICONES.alvo}</svg>`;
+}

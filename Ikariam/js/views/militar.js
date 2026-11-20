@@ -1,13 +1,13 @@
 // MILITAR — exército por cidade, simulador de combate, viagem, waving/LC tank e flancos
 import * as store from '../store.js';
 import * as T from '../timers.js';
-import { UNIDADES, LC_PRESETS, POSEIDON_BONUS, VEL_MERCANTE } from '../data.js';
-import { resumoExercito, somarExercitos, distancia, tempoViagem, velocidadeGrupo, barcosParaPeso, flancoNaval, horaPartida, unidadePorId, generaisUnidade } from '../calc.js';
+import { UNIDADES, LC_PRESETS, POSEIDON_BONUS, VEL_MERCANTE, ORIGENS_ROTA } from '../data.js';
+import { resumoExercito, somarExercitos, distancia, tempoViagem, lerCoords, velocidadeGrupo, barcosParaPeso, flancoNaval, horaPartida, unidadePorId, generaisUnidade } from '../calc.js';
 import { lerUnidades } from '../parser.js';
 import { esc, fmt, fmtDur, fmtHora, fmtQuando, toast, copiar, confirmar, campoNum, campoCoords, paraDatetimeLocal, folha, pedirNumero } from '../ui.js';
-import { gradeUnidades, gradeUnidadesInfo, lerGradeUnidades, colarFolha, seletorCidade } from './comum.js';
+import { gradeUnidades, gradeUnidadesInfo, lerGradeUnidades, colarFolha, seletorCidade, opcoesTimer } from './comum.js';
 import { render as simulador } from './simulador.js';
-import { icone } from '../icones.js';
+import { icone, iconeUnidade, iconeEm } from '../icones.js';
 
 const ABAS = [['exercito', 'elmo', 'Exército'], ['simulador', 'espadas', 'Simulador'], ['viagem', 'rota', 'Viagem'], ['waving', 'ondas', 'Waving'], ['flancos', 'trirreme', 'Flancos']];
 let cidadeSel = null;
@@ -36,21 +36,31 @@ function exercito(raiz, ctx) {
   const c = s.cidades.find(x => x.id === cidadeSel);
   const rc = resumoExercito(c.militar.unidades, c.militar.fora);
   const cap = s.config.capMercante || 500;
+  const guerra = !!s.config.modoGuerra;
+  const mult = guerra ? 2 : 1;
+  const animar = ctx.mem.trocouGuerra; ctx.mem.trocouGuerra = false;
 
   raiz.innerHTML = `
+  <div class="chave-guerra ${guerra ? 'guerra' : 'paz'} ${animar ? 'trocou' : ''}">
+    <button type="button" class="chave" data-guerra role="switch" aria-checked="${guerra}" aria-label="Manutenção: ${guerra ? 'Guerra, tropas mobilizadas (2×)' : 'Paz, tropas estacionadas (1×)'}">
+      <span class="chave-lado lado-paz">${icone('louros', { tam: 18 })}<b>Paz</b><small>estacionado · 1×</small></span>
+      <span class="chave-lado lado-guerra">${icone('espadas', { tam: 18 })}<b>Guerra</b><small>mobilizado · 2×</small></span>
+      <i class="chave-bola" aria-hidden="true"></i>
+    </button>
+  </div>
   <div class="grade2" style="margin-bottom:10px">
     <div class="kpi ouro"><span>Generais do império</span><b>${fmt(gen, 1)}</b><span>recursos ÷ 50</span></div>
-    <div class="kpi ${mReal > m1 ? 'amarelo' : ''}"><span>Manutenção / hora</span><b>${fmt(mReal)}</b><span>${mReal > m1 ? `${fmt(m1)} se todos em casa` : 'tudo em casa (1×)'}</span></div>
+    <div class="kpi kpi-manut ${guerra ? 'vermelho' : 'verde'}"><span>${icone('ouro', { tam: 13 })} Ouro / hora · ${mult}×</span><b class="valor-troca">${fmt(m1 * mult)}</b><span>${guerra ? `+${fmt(m1)} na guerra` : 'tudo estacionado'} · real ${fmt(mReal)}</span></div>
   </div>
   <div class="seg"><button class="${visao === 'cidade' ? 'ativo' : ''}" data-visao="cidade">Por cidade</button><button class="${visao === 'geral' ? 'ativo' : ''}" data-visao="geral">Visão geral (soma)</button></div>
-  ${visao === 'geral' ? visaoGeral(total) : `
+  ${visao === 'geral' ? visaoGeral(total, mult) : `
   <div class="linha-chips" style="margin-bottom:10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">${s.cidades.map(x => { const n = Object.values(x.militar?.unidades || {}).reduce((a, b) => a + b, 0); return `<button class="chip ${x.id === cidadeSel ? 'ativo' : ''}" data-cid="${x.id}">${x.capital ? '👑 ' : ''}${esc(x.nome)}${n ? ` · ${fmt(n)}` : ''}${x.militar?.fora ? ' ✈️' : ''}</button>`; }).join('')}</div>
   <div class="card">
     <div class="card-topo"><span class="ic-q">🏛️</span><h3>${esc(c.nome)}</h3><div class="dir"><button class="btn mini" data-colar>📋 Colar do jogo</button></div></div>
     <button class="dado ${c.militar.fora ? 'desliga' : 'liga'}" data-fora style="margin-bottom:10px"><span>Onde estão as tropas <i class="info-i" data-balao="Atacando, ocupando ou estacionadas longe de casa, a manutenção dobra (2×).">i</i></span><b>${c.militar.fora ? '✈️ Fora de casa · 2×' : '🏠 Em casa · 1×'}</b><small>toque para trocar</small></button>
     <div class="grade3" style="margin-bottom:10px">
       <div class="kpi"><span>Generais</span><b>${fmt(rc.generais, 1)}</b></div>
-      <div class="kpi ${c.militar.fora ? 'amarelo' : ''}"><span>Ouro / h</span><b>${fmt(rc.manutReal)}</b></div>
+      <div class="kpi ${guerra ? 'vermelho' : ''}"><span>Ouro / h · ${mult}×</span><b class="valor-troca">${fmt(rc.manut1x * mult)}</b></div>
       <div class="kpi"><span>Barcos p/ levar</span><b>${fmt(barcosParaPeso(rc.peso, cap))}</b></div>
     </div>
     <div class="sec-t">🗡️ Terra</div>${gradeUnidadesInfo(c.militar.unidades, 'terra')}
@@ -62,6 +72,12 @@ function exercito(raiz, ctx) {
   raiz.addEventListener('click', async e => {
     const t = e.target;
     const v = t.closest('[data-visao]'); if (v) { visao = v.dataset.visao; return ctx.atualizar(); }
+    if (t.closest('[data-guerra]')) {
+      const novo = !store.get().config.modoGuerra;
+      ctx.mem.trocouGuerra = true;
+      store.set(st => { st.config.modoGuerra = novo; });
+      return toast(novo ? '⚔️ Guerra: manutenção mobilizada (2×)' : '🕊️ Paz: manutenção estacionada (1×)', 'ok');
+    }
     const ch = t.closest('[data-cid]'); if (ch) { cidadeSel = ch.dataset.cid; return ctx.atualizar(); }
     if (t.closest('[data-colar]')) {
       colarFolha({ titulo: `Tropas de ${c.nome}`, dica: 'No jogo, abra Quartel/Estaleiro ou a Visão Militar, selecione a tabela, copie e cole. O app acha os nomes e números.', aoLer: (txt, f) => {
@@ -101,12 +117,50 @@ function exercito(raiz, ctx) {
   });
 }
 
-function visaoGeral(total) {
+function visaoGeral(total, mult = 1) {
   const grupo = tipo => UNIDADES.filter(u => u.tipo === tipo && total[u.id] > 0);
-  const linha = u => `<tr><td>${u.icone} ${esc(u.nome)}</td><td class="n">${fmt(total[u.id])}</td><td class="n">${fmt(total[u.id] * generaisUnidade(u), 1)}</td><td class="n">${fmt(total[u.id] * u.manut)}</td></tr>`;
-  const tab = (titulo, lista) => lista.length ? `<div class="sec-t">${titulo}</div><table class="tabela"><tr><th>Unidade</th><th class="n">Qtd</th><th class="n">Gen.</th><th class="n">Ouro/h</th></tr>${lista.map(linha).join('')}</table>` : '';
+  const linha = u => `<tr><td><span class="ic-tab">${iconeUnidade(u.id, { tam: 18 })}</span>${esc(u.nome)}</td><td class="n">${fmt(total[u.id])}</td><td class="n">${fmt(total[u.id] * generaisUnidade(u), 1)}</td><td class="n valor-troca">${fmt(total[u.id] * u.manut * mult)}</td></tr>`;
+  const tab = (titulo, lista) => lista.length ? `<div class="sec-t">${titulo}</div><table class="tabela"><tr><th>Unidade</th><th class="n">Qtd</th><th class="n">Gen.</th><th class="n">Ouro/h ${mult}×</th></tr>${lista.map(linha).join('')}</table>` : '';
   const conteudo = tab('🗡️ Terra', grupo('terra')) + tab('⚓ Mar', grupo('mar'));
-  return `<div class="card">${conteudo || '<div class="vazio">Nenhuma tropa cadastrada ainda.</div>'}<p class="pequeno mut" style="margin:10px 2px 0">Ouro/h na tabela é o custo base (1×). Tropas fora de casa pagam o dobro.</p></div>`;
+  return `<div class="card">${conteudo || '<div class="vazio">Nenhuma tropa cadastrada ainda.</div>'}<p class="pequeno mut" style="margin:10px 2px 0">${mult === 2 ? 'Guerra: tropas mobilizadas pagam o dobro (2×).' : 'Paz: custo estacionado (1×). Tropas fora de casa pagam o dobro.'}</p></div>`;
+}
+
+// ---------------- ROTA MARÍTIMA VISUAL ----------------
+const iconeOrigem = c => (c ? ORIGENS_ROTA[c.capital ? 'capital' : c.papel] || 'templo' : 'templo');
+function rotaHtml({ orig, dest, r, r0, poseidon, cidadeOrigem, naval }) {
+  const p = lerCoords(orig), q = lerCoords(dest);
+  const W = 320, H = 150, pad = 30;
+  let a, b;
+  if (p.x === q.x && p.y === q.y) { a = { x: W / 2 - 55, y: H / 2 + 12 }; b = { x: W / 2 + 55, y: H / 2 - 12 }; }
+  else {
+    const dx = q.x - p.x, dy = q.y - p.y;
+    const k = Math.min((W - 2 * pad) / Math.max(Math.abs(dx), 1e-9), (H - 2 * pad) / Math.max(Math.abs(dy), 1e-9), 46);
+    a = { x: W / 2 - (dx * k) / 2, y: H / 2 - (dy * k) / 2 };
+    b = { x: W / 2 + (dx * k) / 2, y: H / 2 + (dy * k) / 2 };
+  }
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, len = Math.max(1, Math.hypot(b.x - a.x, b.y - a.y));
+  const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len, curva = Math.min(28, len * 0.22);
+  let c = { x: mx + nx * curva, y: my + ny * curva };
+  if (c.y < 10 || c.y > H - 10) c = { x: mx - nx * curva, y: my - ny * curva };
+  const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${c.x.toFixed(1)} ${c.y.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+  const dur = Math.min(12, Math.max(3, r.seg / 900)).toFixed(1);
+  const corte = r0 && poseidon ? Math.round((1 - r.seg / r0.seg) * 100) : 0;
+  return `<div class="rota-mapa">
+    <svg class="rota-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rota de ${esc(orig)} até ${esc(dest)}">
+      <path class="rota-sombra" d="${d}"/><path class="rota-linha" d="${d}"/>
+      <g class="rota-ponto origem" transform="translate(${a.x.toFixed(1)} ${a.y.toFixed(1)})"><circle r="13"/>${iconeEm(iconeOrigem(cidadeOrigem), -9, -9, 18)}</g>
+      <g class="rota-ponto destino" transform="translate(${b.x.toFixed(1)} ${b.y.toFixed(1)})"><circle r="13"/>${iconeEm('alvo', -9, -9, 18)}</g>
+      <g class="rota-barco"><g transform="${b.x < a.x ? 'scale(-1 1)' : ''}">${iconeEm(naval ? 'trirreme' : 'mercante', -16, -26, 32)}</g>
+        <animateMotion dur="${dur}s" repeatCount="indefinite" path="${d}" calcMode="spline" keyTimes="0;1" keySplines=".45 0 .55 1"/></g>
+    </svg>
+    <div class="rota-rotulos"><span>${icone(iconeOrigem(cidadeOrigem), { tam: 14 })} ${esc(cidadeOrigem ? cidadeOrigem.nome : 'Origem')} <small>[${esc(orig)}]</small></span><span>${icone('alvo', { tam: 14 })} <small>[${esc(dest)}]</small></span></div>
+    <div class="rota-rodape">
+      <div class="rota-tempo-box"><small>Tempo de viagem</small><b class="rota-tempo" data-tempo-anim>${fmtDur(r.seg)}</b>
+        ${corte ? `<span class="rota-corte">−${corte}% com Poseidon</span>` : '<span class="rota-corte off">toque no tridente para acelerar</span>'}</div>
+      <button type="button" class="tridente-btn ${poseidon ? 'ligado' : ''}" data-tridente aria-label="Milagre de Poseidon: nível ${poseidon}. Tocar para subir">
+        ${icone('tridente', { tam: 28 })}<span>Poseidon<b>${poseidon ? `Nv ${poseidon} · +${Math.round(POSEIDON_BONUS[poseidon] * 100)}%` : 'desligado'}</b></span></button>
+    </div>
+  </div>`;
 }
 
 // ---------------- VIAGEM ----------------
@@ -131,10 +185,16 @@ function viagem(raiz, ctx) {
   const partida = impactoMs && r ? horaPartida(impactoMs, r.seg) : null;
   const cap = s.config.capMercante || 500, capC = s.config.capCargueiro || 50000;
   const carga = +v.carga || 0;
+  const cidadeOrigem = v.origem ? store.cidade(v.origem) : null;
+  const naval = v.unidades.some(id => UNIDADES.find(u => u.id === id)?.tipo === 'mar');
+  const r0 = r && +v.poseidon ? tempoViagem({ dist, vel, poseidon: 0, tritao: +v.tritao, oligarquia: v.oligarquia, eventoPct: +v.evento, reducaoPct: +v.reducao }) : null;
+  // Atalhos de origem: Capital, Âncoras e Móvel
+  const origensRapidas = s.cidades.filter(c => c.coords && (c.capital || c.papel === 'ancora' || c.papel === 'movel'));
 
   raiz.innerHTML = `
   <div class="card">
-    <h3><span class="ic-q">🧭</span>Rota</h3>
+    <h3><span class="ic-q">${icone('rota', { tam: 18 })}</span>Rota</h3>
+    ${origensRapidas.length ? `<div class="linha-chips" style="margin-bottom:10px">${origensRapidas.map(c => `<button class="chip ${v.origem === c.id ? 'ativo' : ''}" data-origem-rapida="${c.id}">${icone(iconeOrigem(c), { tam: 14 })} ${esc(c.nome)}</button>`).join('')}</div>` : ''}
     <div class="grade2">
       <label class="campo"><span>Saindo de</span>${seletorCidade('origem', v.origem, '', 'Digitar coordenada')}</label>
       <label class="campo ${v.origem ? 'oculto' : ''}"><span>Coordenada de origem</span>${campoCoords('origemCoords', v.origemCoords)}</label>
@@ -155,9 +215,9 @@ function viagem(raiz, ctx) {
   </div>
 
   <div class="card destaque">
-    <h3><span class="ic-q">⏳</span>Tempo de viagem</h3>
-    ${r ? `<div class="resultado" style="margin-top:0">
-      <div class="grande">${fmtDur(r.seg)}</div>
+    <h3><span class="ic-q">${icone('mercante', { tam: 18 })}</span>Rota marítima</h3>
+    ${r ? `${rotaHtml({ orig, dest: v.destino, r, r0, poseidon: +v.poseidon, cidadeOrigem, naval })}
+    <div class="resultado">
       <div class="linha"><span>Distância</span><b>${dist === 0.5 ? 'mesma ilha (0,5)' : fmt(dist, 2) + ' ilhas'}</b></div>
       <div class="linha"><span>Velocidade</span><b>${fmt(vel)} → ${fmt(r.velEf, 1)}</b></div>
       <div class="linha"><span>Saindo agora, chega</span><b>${fmtHora(agora + r.seg * 1000)}</b></div>
@@ -184,6 +244,24 @@ function viagem(raiz, ctx) {
   </div>`;
 
   const atualiza = () => ctx.atualizar();
+  // Tridente: o tempo "desce" até o novo valor e o barco acelera
+  if (v.animDe != null && r) {
+    const el = raiz.querySelector('[data-tempo-anim]');
+    const de = v.animDe, para = r.seg;
+    v.animDe = null;
+    if (el && de !== para) {
+      el.classList.add(para < de ? 'caindo' : 'subindo');
+      raiz.querySelector('[data-tridente]')?.classList.add('onda');
+      const t0 = performance.now();
+      const passo = agoraMs => {
+        const k = Math.min(1, (agoraMs - t0) / 900), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = fmtDur(Math.round(de + (para - de) * e));
+        if (k < 1) requestAnimationFrame(passo);
+      };
+      el.textContent = fmtDur(de);
+      requestAnimationFrame(passo);
+    }
+  }
   raiz.addEventListener('change', e => {
     const t = e.target;
     if (t.name === 'alvo') { v.destino = t.value; return atualiza(); }
@@ -192,6 +270,13 @@ function viagem(raiz, ctx) {
     atualiza();
   });
   raiz.addEventListener('click', e => {
+    const or = e.target.closest('[data-origem-rapida]');
+    if (or) { v.origem = or.dataset.origemRapida; return atualiza(); }
+    if (e.target.closest('[data-tridente]')) {
+      v.animDe = r ? r.seg : null;
+      v.poseidon = (+v.poseidon + 1) % POSEIDON_BONUS.length;
+      return atualiza();
+    }
     const u = e.target.closest('[data-u]');
     if (u) {
       const id = u.dataset.u;
@@ -208,9 +293,40 @@ function viagem(raiz, ctx) {
 }
 
 // ---------------- WAVING ----------------
+// Anéis de cronômetro: o arco esvazia a cada segundo (timers.js) e pulsa nos últimos 5 min
+const ANEIS = [
+  { id: 'municao', nome: 'Munição', sub: 'rotação de 45 min', min: 45, svg: 'balas', emoji: '💣', tipo: 'municao', titulo: 'Rotação de munição' },
+  { id: 'disperso', nome: 'Reagrupamento', sub: 'volta em 60 min', min: 60, svg: 'reagrupar', emoji: '🔁', tipo: 'disperso', titulo: 'Exército inimigo volta' },
+  { id: 'lc15', nome: 'LC Tank', sub: '12 LCs · 1 rodada', min: 15, svg: 'fogo', emoji: '🔥', tipo: 'lc', titulo: 'LC Tank 1 rodada' },
+  { id: 'lc30', nome: 'LC Tank', sub: '43 LCs · 2 rodadas', min: 30, svg: 'fogo', emoji: '🔥', tipo: 'lc', titulo: 'LC Tank 2 rodadas' },
+];
+function timerDoAnel(a, timers, agora) {
+  const casa = t => t.ref === 'anel-' + a.id || (t.tipo === a.tipo && Math.round((t.fim - t.inicio) / 60000) === a.min);
+  return timers.filter(t => casa(t) && t.fim > agora - 90000).sort((x, y) => x.fim - y.fim)[0] || null;
+}
+function anelHtml(a, t, agora) {
+  const resta = t ? Math.min(1, Math.max(0, (t.fim - agora) / Math.max(1, t.fim - t.inicio))) : 1;
+  const viva = t && t.fim > agora;
+  return `<button class="anel-card ${t ? 'ativo' : ''}" data-anel="${a.id}" aria-label="${esc(a.nome)} ${a.min} min: ${t ? 'abrir opções' : 'iniciar'}">
+    <span class="anel ${t ? '' : 'parado'} ${viva && t.fim - agora <= 300000 ? 'pulsa' : ''} ${t && !viva ? 'zerou' : ''}" ${t ? `data-anel-ini="${t.inicio}" data-anel-fim="${t.fim}"` : ''} style="--resta:${resta.toFixed(4)}">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="anel-fundo" cx="50" cy="50" r="43"/><circle class="anel-marcas" cx="50" cy="50" r="43" pathLength="60"/>
+        <circle class="anel-arco" cx="50" cy="50" r="43" pathLength="100"/></svg>
+      <span class="anel-meio">${icone(a.svg, { tam: 22 })}<b ${t ? `data-fim="${t.fim}" data-curto data-zero="fim!"` : ''}>${t ? '…' : `${a.min}m`}</b></span>
+    </span>
+    <b class="anel-nome">${esc(a.nome)}</b><small>${t ? (viva ? `até ${fmtHora(t.fim)}` : 'terminou') : esc(a.sub)}</small></button>`;
+}
+
 function waving(raiz, ctx) {
   const mem = (ctx.mem.waving ||= { alvo: '', ondas: 4, intervalo: 15 });
+  const agora = Date.now();
+  const timers = ctx.s.timers;
+  const ativosAneis = ANEIS.map(a => timerDoAnel(a, timers, agora));
   raiz.innerHTML = `
+  <div class="card aneis-card">
+    <div class="card-topo"><span class="ic-q">${icone('ampulheta', { tam: 18 })}</span><h3>Cronômetros de guerra</h3><div class="dir"><span class="chip ${ativosAneis.some(Boolean) ? 'ouro' : ''}">${ativosAneis.filter(Boolean).length} ativos</span></div></div>
+    <div class="aneis">${ANEIS.map((a, i) => anelHtml(a, ativosAneis[i], agora)).join('')}</div>
+    <p class="pequeno mut" style="margin:10px 2px 0">Toque num anel parado para começar; num anel correndo para adiar, levar à agenda ou apagar. Nos últimos 5 minutos ele pulsa.</p>
+  </div>
   <div class="card">
     <h3><span class="ic-q">🔥</span>Lança-Chamas Tank</h3>
     <p class="dica">O dano do Lança-Foguetes passa muito da vida do LC e o excedente se perde: uma parede barata de LC protege os Aríetes a Vapor.</p>
@@ -224,7 +340,7 @@ function waving(raiz, ctx) {
     <div class="grade2" style="margin-top:10px"><button class="btn ouro" data-t="municao">💣 Iniciar 45 min</button><button class="btn" data-t="rodada">⚔️ Rodada 15 min</button></div>
   </div>
   <div class="card">
-    <h3><span class="ic-q">🔁</span>Alvo dispersou agora</h3>
+    <h3><span class="ic-q">${icone('reagrupar', { tam: 18 })}</span>Alvo dispersou agora · reagrupamento</h3>
     <p class="dica">Sem Cozinheiros, o exército que perde a moral dispersa e volta à cidade em exatos 60 min. Ataque com tudo no retorno para zerar de vez.</p>
     <button class="btn perigo bloco" data-t="disperso">🔁 Dispersou agora · 60 min</button>
   </div>
@@ -236,6 +352,13 @@ function waving(raiz, ctx) {
   const nomeAlvo = () => (mem.alvo ? ` · ${mem.alvo}` : '');
   raiz.addEventListener('input', e => { if (e.target.name in mem) mem[e.target.name] = e.target.value; });
   raiz.addEventListener('click', e => {
+    const an = e.target.closest('[data-anel]');
+    if (an) {
+      const i = ANEIS.findIndex(x => x.id === an.dataset.anel), a = ANEIS[i], t = ativosAneis[i];
+      if (t && t.fim > Date.now()) return opcoesTimer(t.id);
+      if (t) T.removerTimer(t.id);
+      return T.novoTimer({ nome: a.titulo + nomeAlvo(), icone: a.emoji, seg: a.min * 60, tipo: a.tipo, ref: 'anel-' + a.id });
+    }
     const lc = e.target.closest('[data-lc]');
     if (lc) { const p = LC_PRESETS.find(x => x.id === lc.dataset.lc); return T.novoTimer({ nome: `LC Tank ${p.qtd}${nomeAlvo()}`, icone: '🔥', seg: p.timerMin * 60, tipo: 'lc' }); }
     const b = e.target.closest('[data-t]');
