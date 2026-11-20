@@ -94,7 +94,7 @@ function config(raiz, ctx) {
     <button class="btn bloco" style="margin-top:10px" data-testar>🎺 Testar alarme</button>
   </div>
   <div class="card"><h3><span class="ic-q">🎨</span>Aparência</h3>
-    <div class="seg" style="margin:0"><button class="${c.tema !== 'papiro' ? 'ativo' : ''}" data-tema="escuro">🌙 Egeu noturno</button><button class="${c.tema === 'papiro' ? 'ativo' : ''}" data-tema="papiro">📜 Papiro</button></div>
+    <div class="seg" style="margin:0"><button class="${c.tema !== 'papiro' ? 'ativo' : ''}" data-tema="escuro">🏛️ Mármore noturno</button><button class="${c.tema === 'papiro' ? 'ativo' : ''}" data-tema="papiro">📜 Papiro</button></div>
     <div style="margin-top:10px">${sw('mostrarRaras', c.mostrarRaras, 'Mostrar unidades pouco usadas', 'Lanceiro, Arqueiro, Fundibulário, Catapulta, Barco Balista')}</div>
   </div>
   <div class="card"><h3><span class="ic-q">🧨</span>Começar do zero</h3>

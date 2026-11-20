@@ -1,0 +1,169 @@
+/* =====================================================================
+   TEMA "CLÁSSICO GREGO TÁTICO" (2.2) — mármore escuro, bronze e vinho
+   Carregado depois de app.css e menu.css: redefine as cores e os
+   acabamentos. Os componentes novos (tabuleiro, taça, anéis, rota)
+   ficam em tatico.css.
+   ===================================================================== */
+:root {
+  --bg: #0f1216; --bg2: #181d24; --card: #1b2028; --card2: #232933; --campo: #12161b;
+  --linha: rgba(201, 162, 77, .24); --linha2: rgba(239, 230, 210, .07);
+  --txt: #efe6d2; --txt2: #cfc6b4; --mut: #8f887b;
+  --ouro: #c9a24d; --ouro2: #8f6d2c; --ouro-cl: #e2c275; --bronze: #8f6d2c;
+  --vinho: #8b1e3f; --vinho-cl: #c4486f; --vinho-esc: #4d0f23;
+  --egeu: #2a303b; --egeu-cl: #6f9dc4; --egeu-esc: #0f1216;
+  --verde: #2fc48d; --amarelo: #f0a930; --vermelho: #e0354d; --terracota: #b8323f;
+  --nav: #12161b; --sombra: 0 12px 30px -16px rgba(0, 0, 0, .85);
+  --ic-a: var(--ouro); --ic-fogo: #ea7a2b;
+  --fonte-t: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --fonte-n: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --meandro: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M0 9.2H16M12 9.2V1H3V6.6H8.6V4' fill='none' stroke='%23c9a24d' stroke-width='1.25' stroke-opacity='.6'/%3E%3C/svg%3E");
+  --marmore:
+    radial-gradient(1200px 520px at 50% -240px, rgba(201, 162, 77, .13), transparent 70%),
+    radial-gradient(600px 400px at 110% 30%, rgba(139, 30, 63, .10), transparent 70%),
+    linear-gradient(115deg, transparent 0 38%, rgba(239, 230, 210, .025) 39%, transparent 41% 62%, rgba(239, 230, 210, .02) 63%, transparent 65%),
+    linear-gradient(160deg, transparent 0 20%, rgba(239, 230, 210, .018) 21%, transparent 23% 80%, rgba(239, 230, 210, .02) 81%, transparent 83%),
+    linear-gradient(180deg, #0f1216, #11151a 60%, #0d1014);
+  --mn-marinho: #14181e; --mn-ouro: #e2c275; --mn-ouro2: #c9a24d; --mn-claro: #e8d29a;
+  --mn-fundo: radial-gradient(700px 360px at 10% -5%, rgba(201, 162, 77, .2), rgba(201, 162, 77, 0) 70%),
+              radial-gradient(600px 380px at 100% 100%, rgba(139, 30, 63, .28), rgba(139, 30, 63, 0) 70%),
+              linear-gradient(160deg, #161a20 0%, #1c2129 55%, #232933 100%);
+  color-scheme: dark;
+}
+body.papiro {
+  --bg: #efe6d2; --bg2: #f6efdf; --card: #fffdf8; --card2: #f6eedd; --campo: #fffaf0;
+  --linha: rgba(143, 109, 44, .32); --linha2: rgba(39, 26, 14, .09);
+  --txt: #24190e; --txt2: #4b3a2a; --mut: #7d6b56;
+  --ouro: #a37a23; --ouro2: #8f6d2c; --ouro-cl: #8f6d2c; --vinho: #8b1e3f; --vinho-cl: #8b1e3f;
+  --verde: #16804a; --amarelo: #b7791f; --vermelho: #b42318; --nav: #fffdf8; --egeu-cl: #2f6a94;
+  --sombra: 0 8px 22px -14px rgba(60, 40, 15, .45);
+  --marmore: radial-gradient(900px 500px at 50% -200px, rgba(143, 109, 44, .16), transparent 70%), linear-gradient(180deg, #efe6d2, #e9dec6);
+  color-scheme: light;
+}
+
+body { background: var(--marmore); background-attachment: fixed; }
+h1, h2, h3, h4 { letter-spacing: .6px; }
+.tela-titulo h2 { font-weight: 800; font-size: 1.3rem; letter-spacing: 1px; }
+.tela-titulo h2::after { content: ''; display: block; height: 8px; width: 120px; margin-top: 4px; background: var(--meandro) left center / 12px 7.5px repeat-x; opacity: .9; }
+
+/* Números continuam em fonte moderna e legível */
+.hero .relogio, .kpi b, .item .fim b, .resultado .grande, .contagem, .dado b, .uni-t b, .barra-leg b,
+.md-visor input, .md-atalho b, .md-previa b, .timer .contagem, .num { font-family: var(--fonte-n); }
+
+/* ---------- Ícones SVG ---------- */
+.ico { display: inline-block; vertical-align: middle; flex: none; overflow: visible; }
+.ico .a { fill: var(--ic-a); }
+.ico .al { fill: var(--ic-a); fill-opacity: .2; }
+.ico .f { fill: var(--ic-fogo); }
+.ico .v { fill: var(--vinho); }
+.ico .e { fill: var(--amarelo); fill-opacity: .3; }
+.ico .s { fill: currentColor; }
+.ic-q .ico, .item .ic .ico, .cid-topo .ic .ico { color: var(--ouro-cl); }
+
+/* ---------- Topo ---------- */
+.topo { background: linear-gradient(180deg, rgba(20, 24, 30, .98), rgba(15, 18, 22, .94)); border-bottom: 0; }
+.topo::after { content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px; background: var(--meandro) left center / 12.8px 8px repeat-x; pointer-events: none; opacity: .8; }
+body.papiro .topo { background: linear-gradient(180deg, #2a2219, #1f1913); color: #f6efdf; }
+.topo .marca { border-radius: 12px; box-shadow: 0 0 0 1px rgba(201, 162, 77, .45), 0 6px 14px -6px rgba(0, 0, 0, .8); }
+.topo h1 { font-size: .98rem; letter-spacing: 1.2px; }
+.topo h1 b { color: var(--ouro-cl); }
+.topo .sub { color: #a69d8c; }
+.topo-btn { color: var(--ouro-cl); border-color: rgba(201, 162, 77, .28); background: rgba(201, 162, 77, .08); }
+.topo-btn .ico { width: 22px; height: 22px; }
+.topo-btn .ponto { background: var(--vinho-cl); }
+.topo-btn .ponto.verde { background: var(--verde); }
+
+/* ---------- Banner crítico ---------- */
+.banner { background: linear-gradient(90deg, var(--vinho-esc), var(--vinho) 60%, #a8274d); border-bottom: 1px solid rgba(201, 162, 77, .35); }
+
+/* ---------- Hero ---------- */
+.hero { background: linear-gradient(180deg, rgba(15, 18, 22, 0) 30%, rgba(15, 18, 22, .78) 100%), #14181e url('../img/hero.svg') center bottom / cover no-repeat;
+  border-color: rgba(201, 162, 77, .35); color: var(--txt); }
+.hero::before { content: ''; position: absolute; inset: 6px; border: 1px solid rgba(201, 162, 77, .22); border-radius: 17px; pointer-events: none; }
+.hero h2 { letter-spacing: 1px; }
+.hero .relogio { color: var(--ouro-cl); }
+.hero .chip { background: rgba(15, 18, 22, .65); border-color: rgba(201, 162, 77, .3); color: var(--txt); }
+
+/* ---------- Cartões ---------- */
+.card { background: linear-gradient(180deg, var(--card), var(--bg2)); border-color: rgba(201, 162, 77, .12); }
+.card::before { content: ''; position: absolute; left: 14px; right: 14px; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(201, 162, 77, .45), transparent); }
+body.papiro .card::before { display: none; }
+.card.destaque { border-color: rgba(201, 162, 77, .32); }
+.card > h3, .card-topo h3 { letter-spacing: .8px; font-size: .92rem; }
+.ic-q { background: radial-gradient(circle at 30% 25%, rgba(226, 194, 117, .22), rgba(201, 162, 77, .06)); border-color: rgba(201, 162, 77, .35); color: var(--ouro-cl); }
+.ic-q .ico { width: 20px; height: 20px; }
+.sec-t, .painel-t, .md-rotulo { font-family: var(--fonte-t); letter-spacing: 1.2px; }
+
+/* ---------- Chips ---------- */
+.chip.ok { background: rgba(111, 157, 196, .12); border-color: rgba(111, 157, 196, .38); color: var(--egeu-cl); }
+.chip.vinho { background: rgba(139, 30, 63, .22); border-color: rgba(196, 72, 111, .45); color: #f2b6c8; }
+button.chip.ativo { background: linear-gradient(135deg, #e2c275, #c9a24d 60%, #8f6d2c); color: #1a1206; border-color: #e2c275; }
+
+/* ---------- Botões ---------- */
+.btn { border-color: rgba(239, 230, 210, .09); }
+.btn.ouro { background: linear-gradient(135deg, #e8cf8a, #c9a24d 52%, #8f6d2c); color: #1a1206; border-color: rgba(240, 220, 160, .55);
+  box-shadow: 0 8px 18px -10px rgba(201, 162, 77, .9), inset 0 1px 0 rgba(255, 255, 255, .35); text-shadow: 0 1px 0 rgba(255, 240, 200, .35); }
+.btn.egeu { background: linear-gradient(135deg, #343c49, #232933); color: var(--txt); border-color: rgba(201, 162, 77, .25); }
+.btn.vinho { background: linear-gradient(135deg, #b12d55, #8b1e3f 55%, #5e1029); color: #fff2f6; border-color: rgba(226, 194, 117, .35); box-shadow: 0 8px 18px -10px rgba(139, 30, 63, .9); }
+.btn.perigo { background: linear-gradient(135deg, #e0354d, #8f1527); color: #fff; }
+.btn .ico { width: 18px; height: 18px; }
+
+/* ---------- Segmentado ---------- */
+.seg { background: rgba(0, 0, 0, .3); border-color: rgba(201, 162, 77, .16); }
+.seg button.ativo { background: linear-gradient(135deg, #e2c275, #c9a24d 60%, #a6822f); color: #1a1206; box-shadow: 0 6px 14px -8px rgba(201, 162, 77, .9); }
+
+/* ---------- KPIs, itens, painéis ---------- */
+.kpi { background: linear-gradient(180deg, rgba(239, 230, 210, .045), rgba(239, 230, 210, .015)); border-color: rgba(201, 162, 77, .13); }
+.kpi span { letter-spacing: .6px; }
+.item .ic, .cid-topo .ic, .uni .ic { background: radial-gradient(circle at 30% 25%, rgba(226, 194, 117, .2), rgba(201, 162, 77, .05)); border-color: rgba(201, 162, 77, .3); color: var(--ouro-cl); }
+.cid { border-color: rgba(201, 162, 77, .12); }
+.cid.aberta { border-color: rgba(201, 162, 77, .38); box-shadow: var(--sombra), 0 0 0 1px rgba(201, 162, 77, .1); }
+.painel { background: rgba(239, 230, 210, .025); border-color: rgba(201, 162, 77, .12); }
+.dado { background: rgba(239, 230, 210, .04); }
+.dado.liga { border-color: rgba(47, 196, 141, .38); background: rgba(47, 196, 141, .07); }
+.dado.desliga { border-color: rgba(224, 53, 77, .38); background: rgba(224, 53, 77, .07); }
+.barra-p i { background: linear-gradient(90deg, var(--ouro2), var(--ouro-cl)); }
+.barra-p.cheia i { background: linear-gradient(90deg, #17946a, var(--verde)); }
+.barra-p.caindo i { background: linear-gradient(90deg, #8f1527, var(--vermelho)); }
+.resultado { background: rgba(201, 162, 77, .07); border-color: rgba(201, 162, 77, .35); }
+.contador-v { background: rgba(139, 30, 63, .12); border-color: rgba(196, 72, 111, .35); }
+.uni-t .ic { color: var(--ouro-cl); line-height: 0; }
+.uni-t .ico { width: 26px; height: 26px; }
+.uni-t.tem { border-color: rgba(201, 162, 77, .38); background: rgba(201, 162, 77, .07); }
+.uni .ic .ico { width: 20px; height: 20px; }
+.alerta.info { background: rgba(111, 157, 196, .09); border-color: rgba(111, 157, 196, .32); }
+.alerta.erro { background: rgba(224, 53, 77, .1); border-color: rgba(224, 53, 77, .42); }
+
+/* ---------- Navegação ---------- */
+.nav-baixo { border-top: 0; }
+.nav-baixo::before { content: ''; position: absolute; left: 0; right: 0; top: -8px; height: 8px; background: var(--meandro) left center / 12.8px 8px repeat-x; transform: scaleY(-1); opacity: .7; pointer-events: none; }
+.nav-item svg { width: 25px; height: 25px; }
+.nav-item.ativo { color: var(--ouro-cl); }
+.nav-item.ativo::before { background: linear-gradient(90deg, transparent, var(--ouro-cl), transparent); width: 34px; }
+.nav-item .ponto { background: var(--vinho-cl); }
+.mn-botao .ic { background: linear-gradient(135deg, #eed79a 0%, #c9a24d 55%, #7c5c22 100%); box-shadow: 0 12px 22px -8px rgba(201, 162, 77, .85), 0 0 0 5px var(--nav), inset 0 1px 0 rgba(255, 255, 255, .4); }
+
+/* ---------- Folhas, modais, balões, toast ---------- */
+.mn-fundo.aberta { background: rgba(8, 9, 12, .62); }
+.mn-folha { border-color: rgba(201, 162, 77, .28); }
+.mn-fundo.md .mn-folha { border-color: rgba(201, 162, 77, .38); }
+.mn-corpo .mut, .mn-corpo .dica, .md-dica, .md-previa { color: #cfc6b4; }
+.fl-texto { color: #e6dcc6; }
+.md-visor { background: rgba(0, 0, 0, .3); border-color: rgba(201, 162, 77, .25); }
+.md-visor:focus-within { border-color: var(--mn-ouro2); box-shadow: 0 0 0 4px rgba(201, 162, 77, .15); }
+.balao { background: linear-gradient(160deg, #262c36, #171b21); border-color: rgba(201, 162, 77, .42); color: var(--txt); }
+.balao::after { background: #1b2027; border-color: rgba(201, 162, 77, .42); }
+.balao.baixo::after { background: #262c36; }
+.balao b { font-family: var(--fonte-t); letter-spacing: .6px; }
+.toast { background: rgba(24, 29, 36, .95); color: var(--txt); border-color: rgba(201, 162, 77, .35); }
+.toast-ic { background: var(--ouro2); }
+.alarme-tela { background: rgba(10, 11, 14, .84); }
+.alarme-caixa { background: linear-gradient(160deg, #232933, #14181e 60%, #4d0f23); border-color: rgba(201, 162, 77, .5); color: var(--txt); }
+.info-i { background: rgba(201, 162, 77, .14); border-color: rgba(201, 162, 77, .38); color: var(--ouro-cl); font-family: var(--fonte-t); }
+
+/* Interruptor (verde esmeralda) */
+.interruptor input:checked + i { background: var(--verde); }
+
+/* Papiro: ajustes finos */
+body.papiro .topo::after, body.papiro .nav-baixo::before { opacity: .55; }
+body.papiro .hero { color: #f6efdf; }
+body.papiro .kpi, body.papiro .painel { background: rgba(143, 109, 44, .05); }

@@ -7,6 +7,7 @@ import { cloud } from './cloud.js';
 import { iniciarMenu, definirItens } from './menu.js';
 import { vinhoAgora } from './calc.js';
 import { esc, toast } from './ui.js';
+import { icone } from './icones.js';
 import { fecharTodas, folhaAberta } from './folha.js';
 
 import * as inicio from './views/inicio.js';
@@ -80,7 +81,7 @@ function atualizarCasca() {
 
   const bc = document.getElementById('btnConta');
   if (c.usuario?.photoURL) bc.innerHTML = `<img src="${esc(c.usuario.photoURL)}" alt="" referrerpolicy="no-referrer"><span class="ponto verde ${c.online ? '' : 'oculto'}"></span>`;
-  else bc.innerHTML = c.usuario ? '👤' : '☁️';
+  else bc.innerHTML = icone(c.usuario ? 'elmo' : 'nuvem', { tam: 22 });
 }
 
 // ---------- Itens do menu em folha ----------
@@ -100,7 +101,7 @@ function itensMenu() {
     it('Guerra', 'exercito', '🛡️', 'Exército', 'Tropas e generais', ['militar', 'exercito'], { tags: 'tropas manutencao ouro generais' }),
     it('Guerra', 'viagem', '🧭', 'Viagem', 'Ida, volta e partida', ['militar', 'viagem'], { tags: 'tempo navio poseidon tritao' }),
     it('Guerra', 'waving', '🌊', 'Waving', 'LC Tank e munição', ['militar', 'waving'], { tags: 'lanca chamas municao dispersou' }),
-    it('Guerra', 'prebatalha', '⚖️', 'Pré-batalha', 'Checa a composição', ['militar', 'prebatalha'], { tags: 'simulador impasse recuo' }),
+    it('Guerra', 'simulador', '⚔️', 'Simulador', 'Tabuleiro de combate', ['militar', 'simulador'], { tags: 'simulador batalha tabuleiro impasse recuo pre-batalha composicao' }),
     it('Guerra', 'flancos', '⛵', 'Flancos', 'Trirreme × Trirreme', ['militar', 'flancos'], { tags: 'trirreme naval formula' }),
     it('Saque e PvE', 'alvos', '🎯', 'Alvos', 'Espionagem', ['alvos'], { tags: 'espiao relatorio' }),
     it('Saque e PvE', 'saque', '💰', 'Saque', 'Barcos para levar', ['alvos', 'saque'], { tags: 'pilhagem barcos' }),
@@ -138,7 +139,7 @@ export const instalado = () => matchMedia('(display-mode: standalone)').matches 
 export function aplicarTema() {
   const papiro = store.get().config.tema === 'papiro';
   document.body.classList.toggle('papiro', papiro);
-  document.querySelector('meta[name="theme-color"]').content = papiro ? '#1b4b6b' : '#0d2333';
+  document.querySelector('meta[name="theme-color"]').content = papiro ? '#2a2219' : '#0f1216';
 }
 
 // ---------- Partida ----------

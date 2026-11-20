@@ -12,7 +12,10 @@ App estático (HTML + JS puro em módulos ES, sem build, sem npm). Firebase só 
 | Conta/fórmula (viagem, vinho, corrupção, saque, exército) | `js/calc.js` (+ `testes/teste_calc.mjs`) |
 | Leitura de relatório colado do jogo | `js/parser.js` |
 | Texto, botão ou layout de uma tela | `js/views/<tela>.js` |
-| Cor, espaçamento, tema | `css/app.css` |
+| Cor, espaçamento, base visual | `css/app.css` |
+| Tema Clássico Grego (mármore, bronze, vinho, meandro, fontes) | `css/grego.css` (carrega depois de app/menu) |
+| Tabuleiro, taça de vinho, pílulas, anéis, chave Paz/Guerra, rota | `css/tatico.css` |
+| Ícones SVG (unidades, navios, império, papéis, interface) | `js/icones.js` (`icone(nome)`, `iconeUnidade(id)`) |
 | Menu em folha do botão do meio | `js/menu.js`, `css/menu.css` |
 | Folha que sobe de baixo (genérica) | `js/folha.js` |
 | Modal de edição (número, texto, campos, escolher) e balões de dica | `js/modal.js` (estilo no fim de `css/app.css`) |

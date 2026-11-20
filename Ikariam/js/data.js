@@ -86,21 +86,22 @@ export const LINHAS = {
 
 // Papéis táticos das cidades (Dossiê 6.1)
 export const PAPEIS = [
-  { id: 'capital', nome: 'Capital Hub', icone: '👑', dica: 'Centro de distribuição do império' },
-  { id: 'cristal', nome: 'Cristal / Oficina', icone: '💎', dica: 'Pesquisa e Oficina' },
-  { id: 'enxofre', nome: 'Enxofre / Pirotecnia', icone: '🔥', dica: 'Treinar tropas mais barato' },
-  { id: 'vinho', nome: 'Vinho', icone: '🍇', dica: 'Abastece as tavernas' },
-  { id: 'marmore', nome: 'Mármore', icone: '🏛️', dica: 'Construção' },
-  { id: 'madeira', nome: 'Madeira', icone: '🪵', dica: 'Construção e tropas' },
-  { id: 'ancora', nome: 'Cidade Âncora', icone: '⚓', dica: 'Base fixa perto do front' },
-  { id: 'movel', nome: 'Cidade Móvel', icone: '🧭', dica: 'Slot coringa para pular para a guerra' },
+  { id: 'capital', svg: 'louros', nome: 'Capital Hub', icone: '👑', dica: 'Centro de distribuição do império' },
+  { id: 'cristal', svg: 'cristal', nome: 'Cristal / Oficina', icone: '💎', dica: 'Pesquisa e Oficina' },
+  { id: 'enxofre', svg: 'enxofre', nome: 'Enxofre / Pirotecnia', icone: '🔥', dica: 'Treinar tropas mais barato' },
+  { id: 'vinho', svg: 'taca', nome: 'Vinho', icone: '🍇', dica: 'Abastece as tavernas' },
+  { id: 'marmore', svg: 'coluna', nome: 'Mármore', icone: '🏛️', dica: 'Construção' },
+  { id: 'madeira', svg: 'madeira', nome: 'Madeira', icone: '🪵', dica: 'Construção e tropas' },
+  { id: 'ancora', svg: 'ancora', nome: 'Cidade Âncora', icone: '⚓', dica: 'Base fixa perto do front' },
+  { id: 'movel', svg: 'tenda', nome: 'Cidade Móvel', icone: '🧭', dica: 'Slot coringa para pular para a guerra' },
 ];
 
+// Implantação da Cidade Móvel ("Ativar no Front"). Os ids não mudam: ficam salvos em cada cidade.
 export const CHECKLIST_MOVEL = [
-  { id: 'fundar', texto: 'Fundar ao lado da guerra' },
-  { id: 'porto', texto: 'Porto Nv. 1 construído' },
-  { id: 'alarme', texto: 'Barco Alarme no porto (1 LC ou 1 Trirreme)' },
-  { id: 'exercito', texto: 'Exército transferido de uma vez' },
+  { id: 'fundar', texto: 'Fundada ao lado da guerra', icone: 'tenda' },
+  { id: 'porto', texto: 'Porto Nv. 1 construído', icone: 'ancora' },
+  { id: 'alarme', texto: 'Barco Alarme no porto (1 LC ou 1 Trirreme)', icone: 'escudoAlerta' },
+  { id: 'exercito', texto: 'Tropas estacionadas na móvel', icone: 'hoplita' },
 ];
 
 // Satisfação na Prefeitura (Wiki Ikariam): crescimento por hora = satisfação × 0,02.
@@ -196,4 +197,49 @@ export const REGRAS_COMBATE = [
   { icone: '🍲', titulo: 'Sem cozinheiro = dispersão', texto: 'Moral zerada faz o exército dispersar e voltar à cidade em 60 min.' },
 ];
 
-export const VERSAO_APP = '2.1.0';
+// ---------- SIMULADOR DE COMBATE (campo Grande: Prefeitura / Porto nível 25+) ----------
+// Espaços (slots) de cada linha, como no jogo. Flancos: 3 de cada lado.
+export const CAMPO = {
+  terra: { frente: 7, flanco: 6, longo: 7, artilharia: 5, caca: 2, bombardeio: 2 },
+  mar: { principal: 7, flanco: 6, longo: 7, artilharia: 5, caca: 2, bombardeio: 2 },
+};
+// Quem cada linha ataca, em ordem de prioridade (mesma regra do quadro "Quem ataca quem")
+export const ALVOS = {
+  terra: { frente: ['frente', 'longo', 'artilharia', 'flanco'], flanco: ['flanco', 'longo', 'artilharia', 'frente'], longo: ['frente', 'flanco', 'longo'],
+    artilharia: ['frente', 'flanco', 'longo'], caca: ['bombardeio', 'caca'], bombardeio: ['artilharia', 'longo', 'frente'] },
+  mar: { principal: ['principal'], flanco: ['flanco'], longo: ['principal'], artilharia: ['principal'],
+    caca: ['bombardeio', 'caca'], bombardeio: ['artilharia', 'longo', 'principal'] },
+};
+// hp = vida · arm = armadura · dano por tiro · prec = acerto (0 a 1) · mun = rodadas de munição (sem = ilimitada)
+// slot = quantas cabem num espaço do campo Grande · upD/upA = dano/armadura ganhos por nível de Oficina
+// Conferidos na Wiki: Hoplita, Lança-Chamas, Aríete a Vapor e Trirreme. Espaços de Submergível,
+// Lança-Foguetes e Porta-Balões e munição de Sub/LF: guia de frota do fórum. O resto é (conferir).
+export const COMBATE = {
+  hoplita: { hp: 56, arm: 1, dano: 18, prec: 0.9, slot: 50, upD: 1, upA: 1 },
+  gigante: { hp: 184, arm: 3, dano: 42, prec: 0.8, slot: 16, upD: 1, upA: 1 },
+  espadachim: { hp: 18, arm: 0, dano: 10, prec: 0.9, slot: 30, upD: 1, upA: 1 },
+  lanceiro: { hp: 13, arm: 0, dano: 4, prec: 0.7, slot: 30, upD: 1, upA: 1 },
+  carabineiro: { hp: 12, arm: 0, dano: 29, prec: 0.5, mun: 3, slot: 50, upD: 1, upA: 1 },
+  arqueiro: { hp: 16, arm: 0, dano: 5, prec: 0.7, mun: 3, slot: 50, upD: 1, upA: 1 },
+  fundibulario: { hp: 8, arm: 0, dano: 3, prec: 0.7, mun: 5, slot: 50, upD: 1, upA: 1 },
+  ariete: { hp: 88, arm: 1, dano: 80, prec: 0.8, slot: 6, upD: 1, upA: 1 },
+  catapulta: { hp: 54, arm: 0, dano: 133, prec: 0.8, mun: 5, slot: 6, upD: 1, upA: 1 },
+  morteiro: { hp: 32, arm: 0, dano: 270, prec: 0.7, mun: 3, slot: 6, upD: 1, upA: 1 },
+  girocoptero: { hp: 29, arm: 0, dano: 17, prec: 0.8, mun: 4, slot: 30, upD: 1, upA: 1 },
+  balao: { hp: 40, arm: 0, dano: 92, prec: 0.85, mun: 2, slot: 15, upD: 1, upA: 1 },
+  lancachamas: { hp: 219, arm: 8, dano: 82, prec: 0.5, slot: 12, upD: 2, upA: 2 },
+  arietevapor: { hp: 576, arm: 16, dano: 166, prec: 0.9, slot: 5, upD: 2, upA: 2 },
+  trirreme: { hp: 154, arm: 9, dano: 75, prec: 0.8, slot: 6, upD: 2, upA: 2 },
+  barcobalista: { hp: 105, arm: 6, dano: 54, prec: 0.7, slot: 6, upD: 2, upA: 2 },
+  barcocatapulta: { hp: 110, arm: 2, dano: 160, prec: 0.8, mun: 5, slot: 6, upD: 2, upA: 2 },
+  barcomorteiro: { hp: 128, arm: 4, dano: 300, prec: 0.7, mun: 3, slot: 6, upD: 2, upA: 2 },
+  lancafoguetes: { hp: 100, arm: 2, dano: 760, prec: 0.7, mun: 2, slot: 4, upD: 2, upA: 2 },
+  submergivel: { hp: 232, arm: 4, dano: 300, prec: 0.9, mun: 4, slot: 5, upD: 2, upA: 2 },
+  lancharapida: { hp: 46, arm: 0, dano: 24, prec: 0.9, slot: 10, upD: 2, upA: 2 },
+  portabaloes: { hp: 290, arm: 4, dano: 450, prec: 0.8, mun: 2, slot: 3, upD: 2, upA: 2 },
+};
+
+// Rota marítima: de onde a frota pode sair (papel da cidade → ícone)
+export const ORIGENS_ROTA = { capital: 'louros', ancora: 'ancora', movel: 'tenda' };
+
+export const VERSAO_APP = '2.2.0';

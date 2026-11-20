@@ -3,6 +3,7 @@ import * as store from '../store.js';
 import * as T from '../timers.js';
 import { esc, fmtQuando, folha, campoNum, toast, paraDatetimeLocal } from '../ui.js';
 import { UNIDADES } from '../data.js';
+import { iconeUnidade } from '../icones.js';
 
 export const alertasHtml = lista => lista.map(a => `<div class="alerta ${a.nivel}">${esc(a.texto)}</div>`).join('');
 
@@ -90,7 +91,7 @@ export const uni = id => UNIDADES.find(u => u.id === id);
 // Grade de unidades com campo de quantidade (terra/mar)
 export function gradeUnidades(valores = {}, tipo = null, mostrarRaras = store.get().config.mostrarRaras) {
   const lista = UNIDADES.filter(u => (!tipo || u.tipo === tipo) && (mostrarRaras || !u.raro || valores[u.id] > 0));
-  return `<div class="uni-grade">${lista.map(u => `<div class="uni ${valores[u.id] > 0 ? 'tem' : ''}"><span class="ic">${u.icone}</span>
+  return `<div class="uni-grade">${lista.map(u => `<div class="uni ${valores[u.id] > 0 ? 'tem' : ''}"><span class="ic">${iconeUnidade(u.id, { tam: 20 })}</span>
     <label for="u-${u.id}" title="${esc(u.nome)}">${esc(u.nome)}<small>${u.manut} ouro/h · ${u.abrev}</small></label>
     <input id="u-${u.id}" type="number" inputmode="numeric" min="0" data-uni="${u.id}" value="${valores[u.id] || ''}" placeholder="0"></div>`).join('')}</div>`;
 }
@@ -100,7 +101,7 @@ export function gradeUnidadesInfo(valores = {}, tipo = null, mostrarRaras = stor
   const lista = UNIDADES.filter(u => (!tipo || u.tipo === tipo) && (mostrarRaras || !u.raro || valores[u.id] > 0));
   const nf = new Intl.NumberFormat('pt-BR');
   return `<div class="uni-info">${lista.map(u => `<button class="uni-t ${valores[u.id] > 0 ? 'tem' : 'zero'}" data-uni-ed="${u.id}" aria-label="${esc(u.nome)}">
-    <span class="ic">${u.icone}</span><b>${valores[u.id] > 0 ? nf.format(valores[u.id]) : '0'}</b><small>${esc(u.nome)}</small></button>`).join('')}</div>`;
+    <span class="ic">${iconeUnidade(u.id, { tam: 26 })}</span><b>${valores[u.id] > 0 ? nf.format(valores[u.id]) : '0'}</b><small>${esc(u.nome)}</small></button>`).join('')}</div>`;
 }
 
 export function lerGradeUnidades(raiz) {
